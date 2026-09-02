@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Reaction Speed Arcade</title>
     <style>
         * {
             box-sizing: border-box;
             user-select: none;
+            -webkit-user-select: none;
         }
 
         body {
             margin: 0;
-            padding: 0;
+            padding: 10px;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #0f0c1b, #201a36);
             color: #fff;
@@ -20,16 +21,20 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden;
+            min-height: -webkit-fill-available;
+        }
+
+        html {
+            height: -webkit-fill-available;
         }
 
         .game-container {
-            width: 90%;
+            width: 100%;
             max-width: 850px;
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(12px);
             border-radius: 20px;
-            padding: 20px;
+            padding: 12px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
@@ -40,45 +45,54 @@
         header {
             width: 100%;
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            justify-content: space-around;
             align-items: center;
-            margin-bottom: 15px;
-            padding: 10px 20px;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding: 10px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 12px;
         }
 
         .stat-box {
             text-align: center;
+            flex: 1 1 18%;
+            min-width: 60px;
         }
 
         .stat-title {
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             color: #aaa;
         }
 
         .stat-value {
-            font-size: 1.6rem;
+            font-size: 1.1rem;
             font-weight: bold;
             color: #00ffcc;
+            white-space: nowrap;
         }
 
         #lives-display {
             color: #ff4757;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
         }
 
         .action-btn {
             background: #ff4757;
             border: none;
             color: white;
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 8px;
+            font-size: 0.8rem;
             font-weight: bold;
             cursor: pointer;
             transition: background 0.2s, transform 0.1s;
+            flex: 1 1 100%;
+            max-width: 120px;
         }
 
         .action-btn:hover {
@@ -91,7 +105,9 @@
 
         .game-area {
             width: 100%;
-            height: 380px;
+            height: 55vh;
+            max-height: 400px;
+            min-height: 280px;
             background: rgba(0, 0, 0, 0.4);
             border-radius: 15px;
             position: relative;
@@ -107,6 +123,7 @@
             display: none;
             box-shadow: 0 0 20px #ff007f;
             cursor: pointer;
+            touch-action: manipulation;
         }
 
         .overlay {
@@ -122,11 +139,13 @@
             align-items: center;
             z-index: 10;
             border-radius: 15px;
+            padding: 15px;
+            text-align: center;
         }
 
         .overlay h1 {
             margin: 0 0 10px 0;
-            font-size: 2.2rem;
+            font-size: 1.8rem;
             color: #ff007f;
             text-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
         }
@@ -134,70 +153,70 @@
         .overlay p {
             color: #ccc;
             margin-bottom: 20px;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
 
         .start-btn {
             background: linear-gradient(45deg, #00ffcc, #0070f3);
             border: none;
             color: #000;
-            padding: 12px 30px;
+            padding: 10px 24px;
             border-radius: 25px;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
         }
 
-        .start-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(0, 255, 204, 0.7);
+        .start-btn:active {
+            transform: scale(0.95);
         }
 
-        /* Shop Overlay Styling */
+        /* Responsive Shop Overlay */
         .shop-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15, 12, 27, 0.95);
+            background: rgba(15, 12, 27, 0.96);
             display: none;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
             z-index: 20;
             border-radius: 15px;
-            padding: 20px;
+            padding: 10px;
+            overflow-y: auto;
         }
 
         .shop-overlay h2 {
-            margin: 0 0 5px 0;
-            font-size: 1.8rem;
+            margin: 0;
+            font-size: 1.3rem;
             color: #00ffcc;
             text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
         }
 
         .shop-overlay p {
             color: #ccc;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
+            margin: 2px 0 8px 0;
+            font-size: 0.75rem;
         }
 
         .shop-grid {
             width: 100%;
-            max-width: 650px;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
+            gap: 6px;
+            flex-grow: 1;
+            margin-bottom: 8px;
         }
 
         .upgrade-card {
             background: rgba(255, 255, 255, 0.06);
-            padding: 12px;
-            border-radius: 12px;
+            padding: 6px 8px;
+            border-radius: 8px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -206,27 +225,28 @@
 
         .upgrade-title {
             font-weight: bold;
-            font-size: 0.95rem;
-            margin-bottom: 4px;
+            font-size: 0.75rem;
+            margin-bottom: 2px;
             color: #00ffcc;
         }
 
         .upgrade-desc {
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             color: #aaa;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
+            line-height: 1.1;
         }
 
         .buy-btn {
             background: linear-gradient(45deg, #7928ca, #ff007f);
             border: none;
             color: white;
-            padding: 8px 10px;
-            border-radius: 6px;
-            font-size: 0.85rem;
+            padding: 5px 8px;
+            border-radius: 5px;
+            font-size: 0.75rem;
             font-weight: bold;
             cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
+            width: 100%;
         }
 
         .buy-btn:disabled {
@@ -244,17 +264,38 @@
             background: linear-gradient(45deg, #00ffcc, #0070f3);
             border: none;
             color: #000;
-            padding: 10px 25px;
+            padding: 8px 20px;
             border-radius: 20px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
-            transition: transform 0.2s;
+            flex-shrink: 0;
         }
 
-        .resume-btn:hover {
-            transform: scale(1.05);
+        .resume-btn:active {
+            transform: scale(0.95);
+        }
+
+        @media (min-width: 600px) {
+            header {
+                flex-wrap: nowrap;
+                padding: 10px 20px;
+                gap: 0;
+            }
+            .stat-title { font-size: 0.75rem; }
+            .stat-value { font-size: 1.6rem; }
+            #lives-display { font-size: 1.6rem; }
+            .action-btn { flex: initial; max-width: none; font-size: 0.9rem; padding: 8px 16px; }
+            .shop-overlay { padding: 15px; }
+            .shop-overlay h2 { font-size: 1.8rem; }
+            .shop-overlay p { font-size: 0.9rem; margin-bottom: 10px; }
+            .shop-grid { gap: 12px; }
+            .upgrade-card { padding: 10px; }
+            .upgrade-title { font-size: 0.95rem; }
+            .upgrade-desc { font-size: 0.75rem; }
+            .buy-btn { padding: 8px 10px; font-size: 0.85rem; }
+            .resume-btn { font-size: 1rem; padding: 10px 25px; }
         }
     </style>
 </head>
@@ -275,30 +316,30 @@
                 <div class="stat-value" id="lives-display">❤️❤️❤️</div>
             </div>
             <div class="stat-box">
-                <div class="stat-title">Last Speed</div>
+                <div class="stat-title">Speed</div>
                 <div class="stat-value" id="reaction-time">0 ms</div>
             </div>
             <button class="action-btn" id="restart-btn" onclick="resetGame()">Start Over</button>
         </header>
 
         <div class="game-area" id="game-area">
-            <!-- Start / Game Over Overlay -->
             <div class="overlay" id="overlay">
                 <h1 id="overlay-title">Target Rush</h1>
                 <p id="overlay-subtitle">Click targets before they vanish! 3 misses = Game Over.</p>
                 <button class="start-btn" id="start-btn" onclick="startGame()">Start Game</button>
             </div>
 
-            <!-- Shop Intermission Overlay -->
             <div class="shop-overlay" id="shop-overlay">
-                <h2 id="shop-title">Round 1 Complete!</h2>
-                <p>Spend points on upgrades before starting the next round!</p>
+                <div>
+                    <h2 id="shop-title">Round 1 Complete!</h2>
+                    <p>Spend points on upgrades before starting!</p>
+                </div>
                 
                 <div class="shop-grid">
                     <div class="upgrade-card">
                         <div>
                             <div class="upgrade-title">Multiplier (+1)</div>
-                            <div class="upgrade-desc">Increases points earned per click.</div>
+                            <div class="upgrade-desc">More points per click.</div>
                         </div>
                         <button class="buy-btn" id="buy-multiplier" onclick="buyMultiplier()">
                             Cost: <span id="mult-cost">10</span>
@@ -308,7 +349,7 @@
                     <div class="upgrade-card">
                         <div>
                             <div class="upgrade-title">Target Size (+15px)</div>
-                            <div class="upgrade-desc">Makes targets larger and easier to hit.</div>
+                            <div class="upgrade-desc">Larger target size.</div>
                         </div>
                         <button class="buy-btn" id="buy-size" onclick="buySize()">
                             Cost: <span id="size-cost">15</span>
@@ -318,7 +359,7 @@
                     <div class="upgrade-card">
                         <div>
                             <div class="upgrade-title">Slow Time (+200ms)</div>
-                            <div class="upgrade-desc">Gives you more time before targets disappear.</div>
+                            <div class="upgrade-desc">More reaction time.</div>
                         </div>
                         <button class="buy-btn" id="buy-time" onclick="buyTime()">
                             Cost: <span id="time-cost">20</span>
@@ -328,7 +369,7 @@
                     <div class="upgrade-card">
                         <div>
                             <div class="upgrade-title">Heal (+1 Life)</div>
-                            <div class="upgrade-desc">Restore 1 strike (Max 3 lives).</div>
+                            <div class="upgrade-desc">Restore 1 strike.</div>
                         </div>
                         <button class="buy-btn" id="buy-heal" onclick="buyHeal()">
                             Cost: <span id="heal-cost">30</span>
@@ -350,7 +391,7 @@
         let totalTargets = 0;
         let currentRound = 1;
         let pointsPerClick = 1;
-        let targetSize = 50;
+        let targetSize = 45;
         let despawnDelay = 1500;
         
         let multCost = 10;
@@ -416,7 +457,7 @@
             totalTargets = 0;
             currentRound = 1;
             pointsPerClick = 1;
-            targetSize = 50;
+            targetSize = 45;
             despawnDelay = 1500;
 
             multCost = 10;
@@ -458,7 +499,6 @@
             totalTargets++;
             updateUI();
 
-            // Open shop and advance round after every 10 targets displayed
             if (totalTargets % 10 === 0) {
                 openShop();
                 return true;
@@ -483,8 +523,9 @@
             }
         }
 
-        // Target Click Event
-        target.addEventListener('mousedown', (e) => {
+        // Support both click and touch events seamlessly
+        function handleTargetHit(e) {
+            e.preventDefault();
             e.stopPropagation();
             if (!gameActive) return;
 
@@ -500,10 +541,12 @@
             if (!openedShop) {
                 scheduleTarget();
             }
-        });
+        }
+
+        target.addEventListener('pointerdown', handleTargetHit);
 
         // Click outside target (miss penalty)
-        gameArea.addEventListener('mousedown', (e) => {
+        gameArea.addEventListener('pointerdown', (e) => {
             if (e.target === gameArea && target.style.display === 'block') {
                 clearTimeout(despawnTimer);
                 handleMiss();
@@ -536,7 +579,6 @@
 
             spawnTime = Date.now();
 
-            // Set despawn timer (Strike if missed in time)
             despawnTimer = setTimeout(() => {
                 handleMiss();
             }, despawnDelay);
@@ -553,7 +595,7 @@
         }
 
         function buySize() {
-            if (score >= sizeCost && targetSize < 130) {
+            if (score >= sizeCost && targetSize < 110) {
                 score -= sizeCost;
                 targetSize += 15;
                 sizeCost = Math.floor(sizeCost * 2.0);
@@ -583,7 +625,6 @@
             scoreEl.textContent = score;
             roundDisplayEl.textContent = `R${currentRound} (${totalTargets % 10}/10)`;
             
-            // Render Hearts for Lives
             let hearts = '';
             for (let i = 0; i < lives; i++) hearts += '❤️';
             for (let i = lives; i < 3; i++) hearts += '🖤';
@@ -594,11 +635,10 @@
             timeCostEl.textContent = timeCost;
             healCostEl.textContent = healCost;
 
-            // Enable/Disable shop buttons based on criteria
             buyMultBtn.disabled = score < multCost;
             buyTimeBtn.disabled = score < timeCost;
             
-            if (targetSize >= 130) {
+            if (targetSize >= 110) {
                 buySizeBtn.disabled = true;
                 buySizeBtn.textContent = 'MAXED';
             } else {

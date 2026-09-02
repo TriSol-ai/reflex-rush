@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Speed Arcade</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c1b, #201a36);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 90%;
+            max-width: 850px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #00ffcc;
+        }
+
+        #lives-display {
+            color: #ff4757;
+            letter-spacing: 2px;
+        }
+
+        .action-btn {
+            background: #ff4757;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .action-btn:hover {
+            background: #ff6b81;
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .game-area {
+            width: 100%;
+            height: 380px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            cursor: crosshair;
+        }
+
+        #target {
+            border-radius: 50%;
+            background: radial-gradient(circle, #ff007f, #7928ca);
+            position: absolute;
+            display: none;
+            box-shadow: 0 0 20px #ff007f;
+            cursor: pointer;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 12, 27, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            border-radius: 15px;
+        }
+
+        .overlay h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.2rem;
+            color: #ff007f;
+            text-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+        }
+
+        .overlay p {
+            color: #ccc;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #00ffcc, #0070f3);
+            border: none;
+            color: #000;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.7);
+        }
+
+        /* Shop Overlay Styling */
+        .shop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 12, 27, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .shop-overlay h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.8rem;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        .shop-overlay p {
+            color: #ccc;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .shop-grid {
+            width: 100%;
+            max-width: 650px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .upgrade-card {
+            background: rgba(255, 255, 255, 0.06);
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .upgrade-title {
+            font-weight: bold;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+            color: #00ffcc;
+        }
+
+        .upgrade-desc {
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .buy-btn {
+            background: linear-gradient(45deg, #7928ca, #ff007f);
+            border: none;
+            color: white;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .buy-btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .buy-btn:not(:disabled):active {
+            transform: scale(0.95);
+        }
+
+        .resume-btn {
+            background: linear-gradient(45deg, #00ffcc, #0070f3);
+            border: none;
+            color: #000;
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .resume-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <header>
+            <div class="stat-box">
+                <div class="stat-title">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Progress</div>
+                <div class="stat-value" id="round-display">R1 (0/10)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Strikes</div>
+                <div class="stat-value" id="lives-display">❤️❤️❤️</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">Last Speed</div>
+                <div class="stat-value" id="reaction-time">0 ms</div>
+            </div>
+            <button class="action-btn" id="restart-btn" onclick="resetGame()">Start Over</button>
+        </header>
+
+        <div class="game-area" id="game-area">
+            <!-- Start / Game Over Overlay -->
+            <div class="overlay" id="overlay">
+                <h1 id="overlay-title">Target Rush</h1>
+                <p id="overlay-subtitle">Click targets before they vanish! 3 misses = Game Over.</p>
+                <button class="start-btn" id="start-btn" onclick="startGame()">Start Game</button>
+            </div>
+
+            <!-- Shop Intermission Overlay -->
+            <div class="shop-overlay" id="shop-overlay">
+                <h2 id="shop-title">Round 1 Complete!</h2>
+                <p>Spend points on upgrades before starting the next round!</p>
+                
+                <div class="shop-grid">
+                    <div class="upgrade-card">
+                        <div>
+                            <div class="upgrade-title">Multiplier (+1)</div>
+                            <div class="upgrade-desc">Increases points earned per click.</div>
+                        </div>
+                        <button class="buy-btn" id="buy-multiplier" onclick="buyMultiplier()">
+                            Cost: <span id="mult-cost">10</span>
+                        </button>
+                    </div>
+
+                    <div class="upgrade-card">
+                        <div>
+                            <div class="upgrade-title">Target Size (+15px)</div>
+                            <div class="upgrade-desc">Makes targets larger and easier to hit.</div>
+                        </div>
+                        <button class="buy-btn" id="buy-size" onclick="buySize()">
+                            Cost: <span id="size-cost">15</span>
+                        </button>
+                    </div>
+
+                    <div class="upgrade-card">
+                        <div>
+                            <div class="upgrade-title">Slow Time (+200ms)</div>
+                            <div class="upgrade-desc">Gives you more time before targets disappear.</div>
+                        </div>
+                        <button class="buy-btn" id="buy-time" onclick="buyTime()">
+                            Cost: <span id="time-cost">20</span>
+                        </button>
+                    </div>
+
+                    <div class="upgrade-card">
+                        <div>
+                            <div class="upgrade-title">Heal (+1 Life)</div>
+                            <div class="upgrade-desc">Restore 1 strike (Max 3 lives).</div>
+                        </div>
+                        <button class="buy-btn" id="buy-heal" onclick="buyHeal()">
+                            Cost: <span id="heal-cost">30</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="resume-btn" onclick="resumeGame()">Start Next Round</button>
+            </div>
+
+            <div id="target"></div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let score = 0;
+        let lives = 3;
+        let totalTargets = 0;
+        let currentRound = 1;
+        let pointsPerClick = 1;
+        let targetSize = 50;
+        let despawnDelay = 1500;
+        
+        let multCost = 10;
+        let sizeCost = 15;
+        let timeCost = 20;
+        let healCost = 30;
+
+        let spawnTime = 0;
+        let spawnTimer = null;
+        let despawnTimer = null;
+        let gameActive = false;
+
+        // DOM Elements
+        const scoreEl = document.getElementById('score');
+        const roundDisplayEl = document.getElementById('round-display');
+        const livesEl = document.getElementById('lives-display');
+        const reactionTimeEl = document.getElementById('reaction-time');
+        const target = document.getElementById('target');
+        const gameArea = document.getElementById('game-area');
+        
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlay-title');
+        const overlaySubtitle = document.getElementById('overlay-subtitle');
+        const startBtn = document.getElementById('start-btn');
+        const shopOverlay = document.getElementById('shop-overlay');
+        const shopTitleEl = document.getElementById('shop-title');
+
+        const buyMultBtn = document.getElementById('buy-multiplier');
+        const buySizeBtn = document.getElementById('buy-size');
+        const buyTimeBtn = document.getElementById('buy-time');
+        const buyHealBtn = document.getElementById('buy-heal');
+
+        const multCostEl = document.getElementById('mult-cost');
+        const sizeCostEl = document.getElementById('size-cost');
+        const timeCostEl = document.getElementById('time-cost');
+        const healCostEl = document.getElementById('heal-cost');
+
+        function startGame() {
+            gameActive = true;
+            overlay.style.display = 'none';
+            shopOverlay.style.display = 'none';
+            scheduleTarget();
+        }
+
+        function gameOver() {
+            gameActive = false;
+            clearTimeout(spawnTimer);
+            clearTimeout(despawnTimer);
+            target.style.display = 'none';
+            
+            overlayTitle.textContent = "Game Over!";
+            overlaySubtitle.textContent = `Final Score: ${score} points | Reached Round ${currentRound}`;
+            startBtn.textContent = "Play Again";
+            overlay.style.display = 'flex';
+        }
+
+        function resetGame() {
+            clearTimeout(spawnTimer);
+            clearTimeout(despawnTimer);
+            
+            score = 0;
+            lives = 3;
+            totalTargets = 0;
+            currentRound = 1;
+            pointsPerClick = 1;
+            targetSize = 50;
+            despawnDelay = 1500;
+
+            multCost = 10;
+            sizeCost = 15;
+            timeCost = 20;
+            healCost = 30;
+
+            reactionTimeEl.textContent = '0 ms';
+            target.style.display = 'none';
+            shopOverlay.style.display = 'none';
+
+            overlayTitle.textContent = "Target Rush";
+            overlaySubtitle.textContent = "Click targets before they vanish! 3 misses = Game Over.";
+            startBtn.textContent = "Start Game";
+            overlay.style.display = 'flex';
+
+            gameActive = false;
+            updateUI();
+        }
+
+        function openShop() {
+            gameActive = false;
+            clearTimeout(spawnTimer);
+            clearTimeout(despawnTimer);
+            target.style.display = 'none';
+            shopTitleEl.textContent = `Round ${currentRound} Complete!`;
+            shopOverlay.style.display = 'flex';
+        }
+
+        function resumeGame() {
+            currentRound++;
+            updateUI();
+            shopOverlay.style.display = 'none';
+            gameActive = true;
+            scheduleTarget();
+        }
+
+        function registerTargetDisplay() {
+            totalTargets++;
+            updateUI();
+
+            // Open shop and advance round after every 10 targets displayed
+            if (totalTargets % 10 === 0) {
+                openShop();
+                return true;
+            }
+            return false;
+        }
+
+        function handleMiss() {
+            if (!gameActive) return;
+            
+            lives--;
+            target.style.display = 'none';
+
+            if (lives <= 0) {
+                gameOver();
+                return;
+            }
+
+            const openedShop = registerTargetDisplay();
+            if (!openedShop) {
+                scheduleTarget();
+            }
+        }
+
+        // Target Click Event
+        target.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            if (!gameActive) return;
+
+            clearTimeout(despawnTimer);
+            
+            const clickTime = Date.now();
+            reactionTimeEl.textContent = `${clickTime - spawnTime} ms`;
+
+            score += pointsPerClick;
+            target.style.display = 'none';
+            
+            const openedShop = registerTargetDisplay();
+            if (!openedShop) {
+                scheduleTarget();
+            }
+        });
+
+        // Click outside target (miss penalty)
+        gameArea.addEventListener('mousedown', (e) => {
+            if (e.target === gameArea && target.style.display === 'block') {
+                clearTimeout(despawnTimer);
+                handleMiss();
+            }
+        });
+
+        function scheduleTarget() {
+            if (!gameActive) return;
+            const delay = Math.floor(Math.random() * 1200) + 600;
+            spawnTimer = setTimeout(showTarget, delay);
+        }
+
+        function showTarget() {
+            if (!gameActive) return;
+
+            const areaWidth = gameArea.clientWidth;
+            const areaHeight = gameArea.clientHeight;
+
+            const maxX = areaWidth - targetSize;
+            const maxY = areaHeight - targetSize;
+
+            const randomX = Math.floor(Math.random() * Math.max(0, maxX));
+            const randomY = Math.floor(Math.random() * Math.max(0, maxY));
+
+            target.style.width = `${targetSize}px`;
+            target.style.height = `${targetSize}px`;
+            target.style.left = `${randomX}px`;
+            target.style.top = `${randomY}px`;
+            target.style.display = 'block';
+
+            spawnTime = Date.now();
+
+            // Set despawn timer (Strike if missed in time)
+            despawnTimer = setTimeout(() => {
+                handleMiss();
+            }, despawnDelay);
+        }
+
+        // Upgrades
+        function buyMultiplier() {
+            if (score >= multCost) {
+                score -= multCost;
+                pointsPerClick += 1;
+                multCost = Math.floor(multCost * 1.8);
+                updateUI();
+            }
+        }
+
+        function buySize() {
+            if (score >= sizeCost && targetSize < 130) {
+                score -= sizeCost;
+                targetSize += 15;
+                sizeCost = Math.floor(sizeCost * 2.0);
+                updateUI();
+            }
+        }
+
+        function buyTime() {
+            if (score >= timeCost) {
+                score -= timeCost;
+                despawnDelay += 200;
+                timeCost = Math.floor(timeCost * 1.9);
+                updateUI();
+            }
+        }
+
+        function buyHeal() {
+            if (score >= healCost && lives < 3) {
+                score -= healCost;
+                lives++;
+                healCost = Math.floor(healCost * 1.5);
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            scoreEl.textContent = score;
+            roundDisplayEl.textContent = `R${currentRound} (${totalTargets % 10}/10)`;
+            
+            // Render Hearts for Lives
+            let hearts = '';
+            for (let i = 0; i < lives; i++) hearts += '❤️';
+            for (let i = lives; i < 3; i++) hearts += '🖤';
+            livesEl.textContent = hearts;
+
+            multCostEl.textContent = multCost;
+            sizeCostEl.textContent = sizeCost;
+            timeCostEl.textContent = timeCost;
+            healCostEl.textContent = healCost;
+
+            // Enable/Disable shop buttons based on criteria
+            buyMultBtn.disabled = score < multCost;
+            buyTimeBtn.disabled = score < timeCost;
+            
+            if (targetSize >= 130) {
+                buySizeBtn.disabled = true;
+                buySizeBtn.textContent = 'MAXED';
+            } else {
+                buySizeBtn.disabled = score < sizeCost;
+            }
+
+            buyHealBtn.disabled = score < healCost || lives >= 3;
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>

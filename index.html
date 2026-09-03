@@ -173,7 +173,6 @@
             transform: scale(0.95);
         }
 
-        /* Responsive Shop Overlay */
         .shop-overlay {
             position: absolute;
             top: 0;
@@ -325,14 +324,14 @@
         <div class="game-area" id="game-area">
             <div class="overlay" id="overlay">
                 <h1 id="overlay-title">Target Rush</h1>
-                <p id="overlay-subtitle">Click targets before they vanish! 3 misses = Game Over.</p>
+                <p id="overlay-subtitle">Click targets before they vanish! Difficulty scales each round.</p>
                 <button class="start-btn" id="start-btn" onclick="handleStartBtnClick()">Start Game</button>
             </div>
 
             <div class="shop-overlay" id="shop-overlay">
                 <div>
                     <h2 id="shop-title">Round 1 Complete!</h2>
-                    <p>Spend points on upgrades before starting!</p>
+                    <p>Spend points on upgrades before starting the next round!</p>
                 </div>
                 
                 <div class="shop-grid">
@@ -348,8 +347,8 @@
 
                     <div class="upgrade-card">
                         <div>
-                            <div class="upgrade-title">Target Size (+15px)</div>
-                            <div class="upgrade-desc">Larger target size.</div>
+                            <div class="upgrade-title">Target Size (+10px)</div>
+                            <div class="upgrade-desc">Expands target size.</div>
                         </div>
                         <button class="buy-btn" id="buy-size" onclick="buySize()">
                             Cost: <span id="size-cost">15</span>
@@ -358,8 +357,8 @@
 
                     <div class="upgrade-card">
                         <div>
-                            <div class="upgrade-title">Slow Time (+200ms)</div>
-                            <div class="upgrade-desc">More reaction time.</div>
+                            <div class="upgrade-title">Slow Time (+100ms)</div>
+                            <div class="upgrade-desc">Extends window time.</div>
                         </div>
                         <button class="buy-btn" id="buy-time" onclick="buyTime()">
                             Cost: <span id="time-cost">20</span>
@@ -391,8 +390,10 @@
         let totalTargets = 0;
         let currentRound = 1;
         let pointsPerClick = 1;
-        let targetSize = 45;
-        let despawnDelay = 1500;
+        
+        // Dynamic Upgrades Counter-Balance
+        let sizeUpgradesBonus = 0;
+        let timeUpgradesBonus = 0;
         
         let multCost = 10;
         let sizeCost = 15;
@@ -429,6 +430,18 @@
         const sizeCostEl = document.getElementById('size-cost');
         const timeCostEl = document.getElementById('time-cost');
         const healCostEl = document.getElementById('heal-cost');
+
+        function getCurrentTargetSize() {
+            // Base shrinks by 6px per round completed (Starts at 90px down to 36px floor)
+            const baseSize = Math.max(36, 90 - (currentRound - 1) * 6);
+            return baseSize + sizeUpgradesBonus;
+        }
+
+        function getCurrentDespawnDelay() {
+            // Base hit window shortens by 75ms per round (Starts at 1400ms down to 650ms floor)
+            const baseDelay = Math.max(650, 1400 - (currentRound - 1) * 75);
+            return baseDelay + timeUpgradesBonus;
+        }
 
         function handleStartBtnClick() {
             if (isGameOver) {
@@ -467,8 +480,9 @@
             totalTargets = 0;
             currentRound = 1;
             pointsPerClick = 1;
-            targetSize = 45;
-            despawnDelay = 1500;
+            
+            sizeUpgradesBonus = 0;
+            timeUpgradesBonus = 0;
 
             multCost = 10;
             sizeCost = 15;
@@ -480,7 +494,7 @@
             shopOverlay.style.display = 'none';
 
             overlayTitle.textContent = "Target Rush";
-            overlaySubtitle.textContent = "Click targets before they vanish! 3 misses = Game Over.";
+            overlaySubtitle.textContent = "Click targets before they vanish! Difficulty scales each round.";
             startBtn.textContent = "Start Game";
             overlay.style.display = 'flex';
 
@@ -535,7 +549,6 @@
             }
         }
 
-        // Support both click and touch events seamlessly
         function handleTargetHit(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -557,7 +570,6 @@
 
         target.addEventListener('pointerdown', handleTargetHit);
 
-        // Click outside target (miss penalty)
         gameArea.addEventListener('pointerdown', (e) => {
             if (e.target === gameArea && target.style.display === 'block') {
                 clearTimeout(despawnTimer);
@@ -567,7 +579,7 @@
 
         function scheduleTarget() {
             if (!gameActive) return;
-            const delay = Math.floor(Math.random() * 1200) + 600;
+            const delay = Math.floor(Math.random() * 1000) + 500;
             spawnTimer = setTimeout(showTarget, delay);
         }
 
@@ -577,14 +589,15 @@
             const areaWidth = gameArea.clientWidth;
             const areaHeight = gameArea.clientHeight;
 
-            const maxX = areaWidth - targetSize;
-            const maxY = areaHeight - targetSize;
+            const currentSize = getCurrentTargetSize();
+            const maxX = areaWidth - currentSize;
+            const maxY = areaHeight - currentSize;
 
             const randomX = Math.floor(Math.random() * Math.max(0, maxX));
             const randomY = Math.floor(Math.random() * Math.max(0, maxY));
 
-            target.style.width = `${targetSize}px`;
-            target.style.height = `${targetSize}px`;
+            target.style.width = `${currentSize}px`;
+            target.style.height = `${currentSize}px`;
             target.style.left = `${randomX}px`;
             target.style.top = `${randomY}px`;
             target.style.display = 'block';
@@ -593,7 +606,7 @@
 
             despawnTimer = setTimeout(() => {
                 handleMiss();
-            }, despawnDelay);
+            }, getCurrentDespawnDelay());
         }
 
         // Upgrades
@@ -607,10 +620,10 @@
         }
 
         function buySize() {
-            if (score >= sizeCost && targetSize < 110) {
+            if (score >= sizeCost) {
                 score -= sizeCost;
-                targetSize += 15;
-                sizeCost = Math.floor(sizeCost * 2.0);
+                sizeUpgradesBonus += 10;
+                sizeCost = Math.floor(sizeCost * 1.8);
                 updateUI();
             }
         }
@@ -618,8 +631,8 @@
         function buyTime() {
             if (score >= timeCost) {
                 score -= timeCost;
-                despawnDelay += 200;
-                timeCost = Math.floor(timeCost * 1.9);
+                timeUpgradesBonus += 100;
+                timeCost = Math.floor(timeCost * 1.8);
                 updateUI();
             }
         }
@@ -637,7 +650,6 @@
             scoreEl.textContent = score;
             roundDisplayEl.textContent = `R${currentRound} (${totalTargets % 10}/10)`;
             
-            // Render Hearts properly (Clamped strictly to max 3 total slots)
             const activeLives = Math.max(0, Math.min(3, lives));
             let hearts = '';
             for (let i = 0; i < activeLives; i++) hearts += '❤️';
@@ -650,15 +662,8 @@
             healCostEl.textContent = healCost;
 
             buyMultBtn.disabled = score < multCost;
+            buySizeBtn.disabled = score < sizeCost;
             buyTimeBtn.disabled = score < timeCost;
-            
-            if (targetSize >= 110) {
-                buySizeBtn.disabled = true;
-                buySizeBtn.textContent = 'MAXED';
-            } else {
-                buySizeBtn.disabled = score < sizeCost;
-            }
-
             buyHealBtn.disabled = score < healCost || lives >= 3;
         }
 

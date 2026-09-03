@@ -326,7 +326,7 @@
             <div class="overlay" id="overlay">
                 <h1 id="overlay-title">Target Rush</h1>
                 <p id="overlay-subtitle">Click targets before they vanish! 3 misses = Game Over.</p>
-                <button class="start-btn" id="start-btn" onclick="startGame()">Start Game</button>
+                <button class="start-btn" id="start-btn" onclick="handleStartBtnClick()">Start Game</button>
             </div>
 
             <div class="shop-overlay" id="shop-overlay">
@@ -403,6 +403,7 @@
         let spawnTimer = null;
         let despawnTimer = null;
         let gameActive = false;
+        let isGameOver = false;
 
         // DOM Elements
         const scoreEl = document.getElementById('score');
@@ -429,8 +430,16 @@
         const timeCostEl = document.getElementById('time-cost');
         const healCostEl = document.getElementById('heal-cost');
 
+        function handleStartBtnClick() {
+            if (isGameOver) {
+                resetGame();
+            }
+            startGame();
+        }
+
         function startGame() {
             gameActive = true;
+            isGameOver = false;
             overlay.style.display = 'none';
             shopOverlay.style.display = 'none';
             scheduleTarget();
@@ -438,6 +447,7 @@
 
         function gameOver() {
             gameActive = false;
+            isGameOver = true;
             clearTimeout(spawnTimer);
             clearTimeout(despawnTimer);
             target.style.display = 'none';
@@ -475,6 +485,7 @@
             overlay.style.display = 'flex';
 
             gameActive = false;
+            isGameOver = false;
             updateUI();
         }
 
@@ -511,6 +522,7 @@
             
             lives--;
             target.style.display = 'none';
+            updateUI();
 
             if (lives <= 0) {
                 gameOver();
@@ -625,9 +637,11 @@
             scoreEl.textContent = score;
             roundDisplayEl.textContent = `R${currentRound} (${totalTargets % 10}/10)`;
             
+            // Render Hearts properly (Clamped strictly to max 3 total slots)
+            const activeLives = Math.max(0, Math.min(3, lives));
             let hearts = '';
-            for (let i = 0; i < lives; i++) hearts += '❤️';
-            for (let i = lives; i < 3; i++) hearts += '🖤';
+            for (let i = 0; i < activeLives; i++) hearts += '❤️';
+            for (let i = activeLives; i < 3; i++) hearts += '🖤';
             livesEl.textContent = hearts;
 
             multCostEl.textContent = multCost;

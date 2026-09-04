@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reaction Speed Arcade</title>
+    <title>Reaction Speed Arcade v1.0.2</title>
     <style>
         * {
             box-sizing: border-box;
@@ -48,28 +48,28 @@
             flex-wrap: wrap;
             justify-content: space-around;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             margin-bottom: 10px;
-            padding: 10px;
+            padding: 8px 10px;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 12px;
         }
 
         .stat-box {
             text-align: center;
-            flex: 1 1 15%;
-            min-width: 55px;
+            flex: 1 1 12%;
+            min-width: 50px;
         }
 
         .stat-title {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #aaa;
         }
 
         .stat-value {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             color: #00ffcc;
             white-space: nowrap;
@@ -77,31 +77,47 @@
 
         #combo-display {
             color: #ffbe0b;
-            transition: transform 0.1s ease;
         }
 
         #lives-display {
             color: #ff4757;
             letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.92);
         }
 
         .action-btn {
             background: #ff4757;
             border: none;
             color: white;
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 8px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: bold;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-            flex: 1 1 100%;
-            max-width: 120px;
-        }
-
-        .action-btn:hover {
-            background: #ff6b81;
         }
 
         .action-btn:active {
@@ -121,7 +137,6 @@
             cursor: crosshair;
         }
 
-        /* Screen Shake Animation */
         .game-area.shake {
             animation: camera-shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
         }
@@ -147,42 +162,31 @@
             color: #fff;
             text-shadow: 0 0 5px #000;
             z-index: 5;
+            line-height: 1;
         }
 
-        /* Target Types */
-        #target.standard {
-            background: radial-gradient(circle, #ff007f, #7928ca);
-            box-shadow: 0 0 20px #ff007f;
-        }
+        /* --- THEME / SKIN STYLES --- */
+        /* Neon Theme */
+        .theme-neon #target.standard { background: radial-gradient(circle, #ff007f, #7928ca); box-shadow: 0 0 20px #ff007f; }
+        .theme-neon #target.gold { background: radial-gradient(circle, #fff3b0, #ffbe0b, #fb5607); box-shadow: 0 0 25px #ffbe0b; animation: pulse-gold 0.6s infinite alternate; }
+        .theme-neon #target.bomb { background: radial-gradient(circle, #ff0000, #5c0000); box-shadow: 0 0 20px #ff0000; border: 2px solid #ff4757; }
+        .theme-neon #target.armored { background: radial-gradient(circle, #485563, #29323c); box-shadow: 0 0 20px #00e5ff; border: 3px solid #00e5ff; color: #00e5ff; }
 
-        #target.gold {
-            background: radial-gradient(circle, #fff3b0, #ffbe0b, #fb5607);
-            box-shadow: 0 0 25px #ffbe0b, inset 0 0 10px #ffffff;
-            animation: pulse-gold 0.6s infinite alternate;
-        }
+        /* Emoji Theme */
+        .theme-emoji #target { background: transparent !important; box-shadow: none !important; border: none !important; text-shadow: none !important; }
+        
+        /* Retro Pixel Theme */
+        .theme-retro #target { border-radius: 4px; }
+        .theme-retro #target.standard { background: #00ffcc; box-shadow: 0 0 10px #00ffcc; color: #000; }
+        .theme-retro #target.gold { background: #ffbe0b; box-shadow: 0 0 10px #ffbe0b; color: #000; }
+        .theme-retro #target.bomb { background: #ff4757; box-shadow: 0 0 10px #ff4757; color: #fff; }
+        .theme-retro #target.armored { background: #7928ca; box-shadow: 0 0 10px #7928ca; color: #00e5ff; border: 2px solid #00e5ff; }
 
         @keyframes pulse-gold {
             from { transform: scale(1); }
             to { transform: scale(1.08); }
         }
 
-        #target.bomb {
-            background: radial-gradient(circle, #ff0000, #5c0000);
-            box-shadow: 0 0 20px #ff0000;
-            border: 2px solid #ff4757;
-            color: #ffffff;
-            font-size: 1.2rem;
-        }
-
-        #target.armored {
-            background: radial-gradient(circle, #485563, #29323c);
-            box-shadow: 0 0 20px #00e5ff;
-            border: 3px solid #00e5ff;
-            color: #00e5ff;
-            font-size: 1.1rem;
-        }
-
-        /* Particle Burst Effect */
         .particle {
             position: absolute;
             border-radius: 50%;
@@ -192,17 +196,10 @@
         }
 
         @keyframes fade-particle {
-            0% {
-                opacity: 1;
-                transform: translate(0, 0) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(var(--dx), var(--dy)) scale(0);
-            }
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
         }
 
-        /* Floating Damage Text */
         .floating-text {
             position: absolute;
             font-weight: 900;
@@ -215,26 +212,18 @@
         }
 
         @keyframes float-up {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(0.8);
-            }
-            30% {
-                transform: translateY(-12px) scale(1.2);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-35px) scale(0.9);
-            }
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            30% { transform: translateY(-12px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-35px) scale(0.9); }
         }
 
-        .overlay {
+        .overlay, .modal {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15, 12, 27, 0.85);
+            background: rgba(15, 12, 27, 0.92);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -245,8 +234,15 @@
             text-align: center;
         }
 
+        .modal {
+            z-index: 30;
+            display: none;
+            justify-content: space-between;
+            overflow-y: auto;
+        }
+
         .overlay h1 {
-            margin: 0 0 10px 0;
+            margin: 0 0 5px 0;
             font-size: 1.8rem;
             color: #ff007f;
             text-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
@@ -254,25 +250,74 @@
 
         .overlay p {
             color: #ccc;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
         }
 
-        .start-btn {
+        .start-btn, .close-modal-btn {
             background: linear-gradient(45deg, #00ffcc, #0070f3);
             border: none;
             color: #000;
             padding: 10px 24px;
             border-radius: 25px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
-            transition: transform 0.2s;
         }
 
-        .start-btn:active {
-            transform: scale(0.95);
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 450px;
+            margin: 10px 0;
+            text-align: left;
+        }
+
+        .legend-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.75rem;
+            color: #ddd;
+        }
+
+        .legend-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .skin-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .skin-option {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: #ccc;
+        }
+
+        .skin-option.active {
+            border-color: #00ffcc;
+            color: #00ffcc;
+            background: rgba(0, 255, 204, 0.15);
         }
 
         .shop-overlay {
@@ -296,7 +341,6 @@
             margin: 0;
             font-size: 1.3rem;
             color: #00ffcc;
-            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
         }
 
         .shop-overlay p {
@@ -357,10 +401,6 @@
             opacity: 0.5;
         }
 
-        .buy-btn:not(:disabled):active {
-            transform: scale(0.95);
-        }
-
         .resume-btn {
             background: linear-gradient(45deg, #00ffcc, #0070f3);
             border: none;
@@ -370,27 +410,17 @@
             font-size: 0.95rem;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
             flex-shrink: 0;
         }
 
-        .resume-btn:active {
-            transform: scale(0.95);
-        }
-
         @media (min-width: 600px) {
-            header {
-                flex-wrap: nowrap;
-                padding: 10px 20px;
-                gap: 0;
-            }
-            .stat-title { font-size: 0.75rem; }
-            .stat-value { font-size: 1.6rem; }
-            #lives-display { font-size: 1.6rem; }
-            .action-btn { flex: initial; max-width: none; font-size: 0.9rem; padding: 8px 16px; }
+            header { flex-wrap: nowrap; padding: 10px 20px; gap: 0; }
+            .stat-title { font-size: 0.7rem; }
+            .stat-value { font-size: 1.4rem; }
+            #lives-display { font-size: 1.4rem; }
+            .action-btn { font-size: 0.85rem; padding: 6px 14px; }
             .shop-overlay { padding: 15px; }
             .shop-overlay h2 { font-size: 1.8rem; }
-            .shop-overlay p { font-size: 0.9rem; margin-bottom: 10px; }
             .shop-grid { gap: 12px; }
             .upgrade-card { padding: 10px; }
             .upgrade-title { font-size: 0.95rem; }
@@ -400,13 +430,17 @@
         }
     </style>
 </head>
-<body>
+<body class="theme-neon">
 
     <div class="game-container">
         <header>
             <div class="stat-box">
                 <div class="stat-title">Score</div>
                 <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-title">High</div>
+                <div class="stat-value" id="high-score">0</div>
             </div>
             <div class="stat-box">
                 <div class="stat-title">Combo</div>
@@ -424,14 +458,48 @@
                 <div class="stat-title">Speed</div>
                 <div class="stat-value" id="reaction-time">0 ms</div>
             </div>
-            <button class="action-btn" id="restart-btn" onclick="resetGame()">Start Over</button>
+            <div class="header-controls">
+                <button class="icon-btn" id="audio-toggle" onclick="toggleAudio()" title="Mute/Unmute">🔊</button>
+                <button class="icon-btn" onclick="openHelpModal()" title="How to Play">❓</button>
+                <button class="action-btn" id="restart-btn" onclick="resetGame()">Start Over</button>
+            </div>
         </header>
 
         <div class="game-area" id="game-area">
             <div class="overlay" id="overlay">
                 <h1 id="overlay-title">Target Rush</h1>
-                <p id="overlay-subtitle">Click targets! Sensory feedback juicy mode enabled.</p>
+                <p id="overlay-subtitle">Click targets! Select skin & tap Start.</p>
+                
+                <div class="skin-selector">
+                    <div class="skin-option active" onclick="setSkin('neon', this)">Neon</div>
+                    <div class="skin-option" onclick="setSkin('emoji', this)">Emoji 🎯</div>
+                    <div class="skin-option" onclick="setSkin('retro', this)">Retro 👾</div>
+                </div>
+
                 <button class="start-btn" id="start-btn" onclick="handleStartBtnClick()">Start Game</button>
+            </div>
+
+            <div class="modal" id="help-modal">
+                <h2 style="color: #00ffcc; margin: 0;">How To Play</h2>
+                <div class="legend-grid">
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: radial-gradient(circle, #ff007f, #7928ca);"></div>
+                        <div><b>Standard:</b> Click for points & combos.</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: radial-gradient(circle, #fff3b0, #ffbe0b, #fb5607);">★</div>
+                        <div><b>Gold Target:</b> 3x Points! Vanishes 25% faster.</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: #ff0000; border: 1px solid #ff4757;">✕</div>
+                        <div><b>Bomb:</b> DO NOT CLICK! Instant -1 Life strike.</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: #29323c; border: 2px solid #00e5ff; color: #00e5ff;">2</div>
+                        <div><b>Armored:</b> Requires 2–3 rapid taps.</div>
+                    </div>
+                </div>
+                <button class="close-modal-btn" onclick="closeHelpModal()">Got It!</button>
             </div>
 
             <div class="shop-overlay" id="shop-overlay">
@@ -490,8 +558,8 @@
     </div>
 
     <script>
-        // --- WEB AUDIO API SYNTHESIZER ---
         let audioCtx = null;
+        let isMuted = false;
 
         function initAudio() {
             if (!audioCtx) {
@@ -502,7 +570,14 @@
             }
         }
 
+        function toggleAudio() {
+            isMuted = !isMuted;
+            document.getElementById('audio-toggle').textContent = isMuted ? '🔇' : '🔊';
+        }
+
         function playSound(type) {
+            if (isMuted) return;
+            initAudio();
             if (!audioCtx) return;
             const now = audioCtx.currentTime;
 
@@ -573,10 +648,27 @@
             }
         }
 
-        // --- JUICE & VISUAL EFFECTS ---
+        let currentSkin = 'neon';
+        const emojiMap = { standard: '🎯', gold: '⭐', bomb: '💣', armored: '🛡️' };
+
+        function setSkin(skinName, el) {
+            currentSkin = skinName;
+            document.body.className = `theme-${skinName}`;
+            document.querySelectorAll('.skin-option').forEach(opt => opt.classList.remove('active'));
+            if (el) el.classList.add('active');
+        }
+
+        function openHelpModal() {
+            document.getElementById('help-modal').style.display = 'flex';
+        }
+
+        function closeHelpModal() {
+            document.getElementById('help-modal').style.display = 'none';
+        }
+
         function triggerScreenShake() {
             gameArea.classList.remove('shake');
-            void gameArea.offsetWidth; // Force reflow
+            void gameArea.offsetWidth;
             gameArea.classList.add('shake');
             setTimeout(() => gameArea.classList.remove('shake'), 350);
         }
@@ -619,8 +711,8 @@
             }
         }
 
-        // --- GAME STATE ---
         let score = 0;
+        let highScore = parseInt(localStorage.getItem('targetRushHighScore')) || 0;
         let lives = 3;
         let totalTargets = 0;
         let currentRound = 1;
@@ -651,8 +743,8 @@
         let gameActive = false;
         let isGameOver = false;
 
-        // DOM Elements
         const scoreEl = document.getElementById('score');
+        const highScoreEl = document.getElementById('high-score');
         const comboDisplayEl = document.getElementById('combo-display');
         const roundDisplayEl = document.getElementById('round-display');
         const livesEl = document.getElementById('lives-display');
@@ -735,10 +827,16 @@
             cancelAnimationFrame(driftAnimationId);
             target.style.display = 'none';
             
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('targetRushHighScore', highScore);
+            }
+
             overlayTitle.textContent = "Game Over!";
             overlaySubtitle.textContent = `Final Score: ${score} points | Reached Round ${currentRound}`;
             startBtn.textContent = "Play Again";
             overlay.style.display = 'flex';
+            updateUI();
         }
 
         function resetGame() {
@@ -842,7 +940,6 @@
             const clickTime = Date.now();
             const reactMs = clickTime - spawnTime;
 
-            // BOMB TARGET CLICKED -> Penalty!
             if (targetType === 'bomb') {
                 clearTimeout(despawnTimer);
                 cancelAnimationFrame(driftAnimationId);
@@ -870,10 +967,9 @@
                 return;
             }
 
-            // ARMORED TARGET HIT -> Reduce required taps
             if (targetType === 'armored' && hitsRemaining > 1) {
                 hitsRemaining--;
-                target.textContent = hitsRemaining;
+                target.textContent = currentSkin === 'emoji' ? '🛡️' : hitsRemaining;
                 target.style.transform = 'scale(0.85)';
                 setTimeout(() => target.style.transform = 'scale(1)', 80);
                 playSound('armored_hit');
@@ -883,7 +979,6 @@
                 return;
             }
 
-            // SUCCESSFUL TARGET DESTROYED
             clearTimeout(despawnTimer);
             cancelAnimationFrame(driftAnimationId);
             
@@ -896,7 +991,11 @@
             const gainedPoints = pointsPerClick * comboMultiplier * typeValueMultiplier;
             score += gainedPoints;
             
-            // Audio & Visual Effects
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('targetRushHighScore', highScore);
+            }
+
             const currentSize = getCurrentTargetSize();
             const centerX = targetPosX + currentSize / 2;
             const centerY = targetPosY + currentSize / 2;
@@ -940,17 +1039,17 @@
             const rand = Math.random();
             if (rand < 0.12) {
                 targetType = 'gold';
-                target.textContent = '';
+                target.textContent = currentSkin === 'emoji' ? emojiMap.gold : (currentSkin === 'retro' ? '★' : '');
             } else if (rand < 0.25) {
                 targetType = 'bomb';
-                target.textContent = '✕';
+                target.textContent = currentSkin === 'emoji' ? emojiMap.bomb : '✕';
             } else if (rand < 0.38) {
                 targetType = 'armored';
                 hitsRemaining = Math.random() < 0.5 ? 2 : 3;
-                target.textContent = hitsRemaining;
+                target.textContent = currentSkin === 'emoji' ? emojiMap.armored : hitsRemaining;
             } else {
                 targetType = 'standard';
-                target.textContent = '';
+                target.textContent = currentSkin === 'emoji' ? emojiMap.standard : '';
             }
 
             target.className = targetType;
@@ -967,6 +1066,12 @@
 
             target.style.width = `${currentSize}px`;
             target.style.height = `${currentSize}px`;
+            
+            // Dynamic Font & Emoji Scale Fix (properly scales with sizeUpgradesBonus)
+            const fontRatio = currentSkin === 'emoji' ? 0.82 : 0.45;
+            const fontSizePx = Math.floor(currentSize * fontRatio);
+            target.style.fontSize = `${Math.max(14, fontSizePx)}px`;
+
             target.style.left = `${targetPosX}px`;
             target.style.top = `${targetPosY}px`;
             target.style.display = 'flex';
@@ -1006,7 +1111,6 @@
             driftAnimationId = requestAnimationFrame(() => updateDriftPosition(size, maxX, maxY));
         }
 
-        // Upgrades
         function buyMultiplier() {
             if (score >= multCost) {
                 score -= multCost;
@@ -1049,6 +1153,7 @@
 
         function updateUI() {
             scoreEl.textContent = score;
+            highScoreEl.textContent = highScore;
             comboDisplayEl.textContent = `x${comboMultiplier}`;
             roundDisplayEl.textContent = `R${currentRound} (${totalTargets % 10}/10)`;
             

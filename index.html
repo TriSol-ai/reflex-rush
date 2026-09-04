@@ -57,8 +57,8 @@
 
         .stat-box {
             text-align: center;
-            flex: 1 1 18%;
-            min-width: 60px;
+            flex: 1 1 15%;
+            min-width: 55px;
         }
 
         .stat-title {
@@ -73,6 +73,11 @@
             font-weight: bold;
             color: #00ffcc;
             white-space: nowrap;
+        }
+
+        #combo-display {
+            color: #ffbe0b;
+            transition: transform 0.1s ease;
         }
 
         #lives-display {
@@ -116,14 +121,111 @@
             cursor: crosshair;
         }
 
+        /* Screen Shake Animation */
+        .game-area.shake {
+            animation: camera-shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes camera-shake {
+            10%, 90% { transform: translate3d(-2px, 1px, 0); }
+            20%, 80% { transform: translate3d(4px, -2px, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 3px, 0); }
+            40%, 60% { transform: translate3d(6px, -3px, 0); }
+        }
+
         #target {
             border-radius: 50%;
-            background: radial-gradient(circle, #ff007f, #7928ca);
             position: absolute;
             display: none;
-            box-shadow: 0 0 20px #ff007f;
             cursor: pointer;
             touch-action: manipulation;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+            z-index: 5;
+        }
+
+        /* Target Types */
+        #target.standard {
+            background: radial-gradient(circle, #ff007f, #7928ca);
+            box-shadow: 0 0 20px #ff007f;
+        }
+
+        #target.gold {
+            background: radial-gradient(circle, #fff3b0, #ffbe0b, #fb5607);
+            box-shadow: 0 0 25px #ffbe0b, inset 0 0 10px #ffffff;
+            animation: pulse-gold 0.6s infinite alternate;
+        }
+
+        @keyframes pulse-gold {
+            from { transform: scale(1); }
+            to { transform: scale(1.08); }
+        }
+
+        #target.bomb {
+            background: radial-gradient(circle, #ff0000, #5c0000);
+            box-shadow: 0 0 20px #ff0000;
+            border: 2px solid #ff4757;
+            color: #ffffff;
+            font-size: 1.2rem;
+        }
+
+        #target.armored {
+            background: radial-gradient(circle, #485563, #29323c);
+            box-shadow: 0 0 20px #00e5ff;
+            border: 3px solid #00e5ff;
+            color: #00e5ff;
+            font-size: 1.1rem;
+        }
+
+        /* Particle Burst Effect */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 6;
+            animation: fade-particle 0.45s ease-out forwards;
+        }
+
+        @keyframes fade-particle {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--dx), var(--dy)) scale(0);
+            }
+        }
+
+        /* Floating Damage Text */
+        .floating-text {
+            position: absolute;
+            font-weight: 900;
+            font-size: 1rem;
+            pointer-events: none;
+            z-index: 7;
+            animation: float-up 0.75s ease-out forwards;
+            text-shadow: 0 0 8px rgba(0,0,0,0.8);
+            white-space: nowrap;
+        }
+
+        @keyframes float-up {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(0.8);
+            }
+            30% {
+                transform: translateY(-12px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-35px) scale(0.9);
+            }
         }
 
         .overlay {
@@ -307,6 +409,10 @@
                 <div class="stat-value" id="score">0</div>
             </div>
             <div class="stat-box">
+                <div class="stat-title">Combo</div>
+                <div class="stat-value" id="combo-display">x1</div>
+            </div>
+            <div class="stat-box">
                 <div class="stat-title">Progress</div>
                 <div class="stat-value" id="round-display">R1 (0/10)</div>
             </div>
@@ -324,7 +430,7 @@
         <div class="game-area" id="game-area">
             <div class="overlay" id="overlay">
                 <h1 id="overlay-title">Target Rush</h1>
-                <p id="overlay-subtitle">Click targets before they vanish! Difficulty scales each round.</p>
+                <p id="overlay-subtitle">Click targets! Sensory feedback juicy mode enabled.</p>
                 <button class="start-btn" id="start-btn" onclick="handleStartBtnClick()">Start Game</button>
             </div>
 
@@ -338,7 +444,7 @@
                     <div class="upgrade-card">
                         <div>
                             <div class="upgrade-title">Multiplier (+1)</div>
-                            <div class="upgrade-desc">More points per click.</div>
+                            <div class="upgrade-desc">More base points per click.</div>
                         </div>
                         <button class="buy-btn" id="buy-multiplier" onclick="buyMultiplier()">
                             Cost: <span id="mult-cost">10</span>
@@ -358,7 +464,7 @@
                     <div class="upgrade-card">
                         <div>
                             <div class="upgrade-title">Slow Time (+100ms)</div>
-                            <div class="upgrade-desc">Extends window time.</div>
+                            <div class="upgrade-desc">Extends hit window time.</div>
                         </div>
                         <button class="buy-btn" id="buy-time" onclick="buyTime()">
                             Cost: <span id="time-cost">20</span>
@@ -379,19 +485,158 @@
                 <button class="resume-btn" onclick="resumeGame()">Start Next Round</button>
             </div>
 
-            <div id="target"></div>
+            <div id="target" class="standard"></div>
         </div>
     </div>
 
     <script>
-        // Game State
+        // --- WEB AUDIO API SYNTHESIZER ---
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            if (type === 'hit') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(520, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } 
+            else if (type === 'gold') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(1760, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+            else if (type === 'armored_hit') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(440, now + 0.08);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            }
+            else if (type === 'miss' || type === 'bomb') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(60, now + 0.25);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+            else if (type === 'buy') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.06);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+        }
+
+        // --- JUICE & VISUAL EFFECTS ---
+        function triggerScreenShake() {
+            gameArea.classList.remove('shake');
+            void gameArea.offsetWidth; // Force reflow
+            gameArea.classList.add('shake');
+            setTimeout(() => gameArea.classList.remove('shake'), 350);
+        }
+
+        function spawnFloatingText(x, y, text, color = '#00ffcc') {
+            const floatEl = document.createElement('div');
+            floatEl.className = 'floating-text';
+            floatEl.textContent = text;
+            floatEl.style.color = color;
+            floatEl.style.left = `${x}px`;
+            floatEl.style.top = `${y}px`;
+
+            gameArea.appendChild(floatEl);
+            setTimeout(() => floatEl.remove(), 750);
+        }
+
+        function createParticleBurst(x, y, color) {
+            const particleCount = 10;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+
+                const size = Math.floor(Math.random() * 6) + 4;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.background = color;
+
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.floor(Math.random() * 45) + 20;
+                const dx = `${Math.cos(angle) * distance}px`;
+                const dy = `${Math.sin(angle) * distance}px`;
+
+                particle.style.setProperty('--dx', dx);
+                particle.style.setProperty('--dy', dy);
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+
+                gameArea.appendChild(particle);
+                setTimeout(() => particle.remove(), 450);
+            }
+        }
+
+        // --- GAME STATE ---
         let score = 0;
         let lives = 3;
         let totalTargets = 0;
         let currentRound = 1;
         let pointsPerClick = 1;
         
-        // Dynamic Upgrades Counter-Balance
+        let consecutiveHits = 0;
+        let comboMultiplier = 1;
+        let targetType = 'standard';
+        let hitsRemaining = 1;
+        
+        let targetPosX = 0;
+        let targetPosY = 0;
+        let driftVelX = 0;
+        let driftVelY = 0;
+        let driftAnimationId = null;
+
         let sizeUpgradesBonus = 0;
         let timeUpgradesBonus = 0;
         
@@ -408,6 +653,7 @@
 
         // DOM Elements
         const scoreEl = document.getElementById('score');
+        const comboDisplayEl = document.getElementById('combo-display');
         const roundDisplayEl = document.getElementById('round-display');
         const livesEl = document.getElementById('lives-display');
         const reactionTimeEl = document.getElementById('reaction-time');
@@ -432,18 +678,41 @@
         const healCostEl = document.getElementById('heal-cost');
 
         function getCurrentTargetSize() {
-            // Base shrinks by 6px per round completed (Starts at 90px down to 36px floor)
-            const baseSize = Math.max(36, 90 - (currentRound - 1) * 6);
-            return baseSize + sizeUpgradesBonus;
+            let baseScaledSize = 90;
+            if (currentRound <= 10) {
+                baseScaledSize = 90 - (currentRound - 1) * 6;
+            } else {
+                baseScaledSize = Math.max(18, 36 - (currentRound - 10) * 1);
+            }
+
+            let finalSize = baseScaledSize + sizeUpgradesBonus;
+            
+            if (targetType === 'armored') {
+                finalSize = Math.floor(finalSize * 1.35);
+            }
+            return finalSize;
         }
 
         function getCurrentDespawnDelay() {
-            // Base hit window shortens by 75ms per round (Starts at 1400ms down to 650ms floor)
-            const baseDelay = Math.max(650, 1400 - (currentRound - 1) * 75);
-            return baseDelay + timeUpgradesBonus;
+            let baseScaledDelay = 1400;
+            if (currentRound <= 10) {
+                baseScaledDelay = 1400 - (currentRound - 1) * 75;
+            } else {
+                baseScaledDelay = Math.max(400, 650 - (currentRound - 10) * 15);
+            }
+
+            let finalDelay = baseScaledDelay + timeUpgradesBonus;
+            
+            if (targetType === 'gold') {
+                finalDelay = Math.floor(finalDelay * 0.75);
+            } else if (targetType === 'armored') {
+                finalDelay = Math.floor(finalDelay * 1.25);
+            }
+            return finalDelay;
         }
 
         function handleStartBtnClick() {
+            initAudio();
             if (isGameOver) {
                 resetGame();
             }
@@ -463,6 +732,7 @@
             isGameOver = true;
             clearTimeout(spawnTimer);
             clearTimeout(despawnTimer);
+            cancelAnimationFrame(driftAnimationId);
             target.style.display = 'none';
             
             overlayTitle.textContent = "Game Over!";
@@ -474,12 +744,17 @@
         function resetGame() {
             clearTimeout(spawnTimer);
             clearTimeout(despawnTimer);
+            cancelAnimationFrame(driftAnimationId);
             
             score = 0;
             lives = 3;
             totalTargets = 0;
             currentRound = 1;
             pointsPerClick = 1;
+            consecutiveHits = 0;
+            comboMultiplier = 1;
+            targetType = 'standard';
+            hitsRemaining = 1;
             
             sizeUpgradesBonus = 0;
             timeUpgradesBonus = 0;
@@ -494,7 +769,7 @@
             shopOverlay.style.display = 'none';
 
             overlayTitle.textContent = "Target Rush";
-            overlaySubtitle.textContent = "Click targets before they vanish! Difficulty scales each round.";
+            overlaySubtitle.textContent = "Click targets! Difficulty scales each round (smaller & faster).";
             startBtn.textContent = "Start Game";
             overlay.style.display = 'flex';
 
@@ -507,12 +782,14 @@
             gameActive = false;
             clearTimeout(spawnTimer);
             clearTimeout(despawnTimer);
+            cancelAnimationFrame(driftAnimationId);
             target.style.display = 'none';
             shopTitleEl.textContent = `Round ${currentRound} Complete!`;
             shopOverlay.style.display = 'flex';
         }
 
         function resumeGame() {
+            initAudio();
             currentRound++;
             updateUI();
             shopOverlay.style.display = 'none';
@@ -534,7 +811,15 @@
         function handleMiss() {
             if (!gameActive) return;
             
-            lives--;
+            if (targetType !== 'bomb') {
+                lives--;
+                consecutiveHits = 0;
+                comboMultiplier = 1;
+                playSound('miss');
+                triggerScreenShake();
+            }
+            
+            cancelAnimationFrame(driftAnimationId);
             target.style.display = 'none';
             updateUI();
 
@@ -554,12 +839,78 @@
             e.stopPropagation();
             if (!gameActive) return;
 
-            clearTimeout(despawnTimer);
-            
             const clickTime = Date.now();
-            reactionTimeEl.textContent = `${clickTime - spawnTime} ms`;
+            const reactMs = clickTime - spawnTime;
 
-            score += pointsPerClick;
+            // BOMB TARGET CLICKED -> Penalty!
+            if (targetType === 'bomb') {
+                clearTimeout(despawnTimer);
+                cancelAnimationFrame(driftAnimationId);
+                lives--;
+                consecutiveHits = 0;
+                comboMultiplier = 1;
+                playSound('bomb');
+                triggerScreenShake();
+                
+                const currentSize = getCurrentTargetSize();
+                spawnFloatingText(targetPosX + currentSize / 2, targetPosY, "BOMB! -1 HP", "#ff4757");
+                
+                target.style.display = 'none';
+                updateUI();
+
+                if (lives <= 0) {
+                    gameOver();
+                    return;
+                }
+
+                const openedShop = registerTargetDisplay();
+                if (!openedShop) {
+                    scheduleTarget();
+                }
+                return;
+            }
+
+            // ARMORED TARGET HIT -> Reduce required taps
+            if (targetType === 'armored' && hitsRemaining > 1) {
+                hitsRemaining--;
+                target.textContent = hitsRemaining;
+                target.style.transform = 'scale(0.85)';
+                setTimeout(() => target.style.transform = 'scale(1)', 80);
+                playSound('armored_hit');
+                
+                const currentSize = getCurrentTargetSize();
+                createParticleBurst(targetPosX + currentSize / 2, targetPosY + currentSize / 2, '#00e5ff');
+                return;
+            }
+
+            // SUCCESSFUL TARGET DESTROYED
+            clearTimeout(despawnTimer);
+            cancelAnimationFrame(driftAnimationId);
+            
+            reactionTimeEl.textContent = `${reactMs} ms`;
+
+            consecutiveHits++;
+            comboMultiplier = Math.min(5, 1 + Math.floor(consecutiveHits / 3));
+
+            const typeValueMultiplier = (targetType === 'gold') ? 3 : (targetType === 'armored' ? 2 : 1);
+            const gainedPoints = pointsPerClick * comboMultiplier * typeValueMultiplier;
+            score += gainedPoints;
+            
+            // Audio & Visual Effects
+            const currentSize = getCurrentTargetSize();
+            const centerX = targetPosX + currentSize / 2;
+            const centerY = targetPosY + currentSize / 2;
+
+            if (targetType === 'gold') {
+                playSound('gold');
+                createParticleBurst(centerX, centerY, '#ffbe0b');
+                spawnFloatingText(centerX, targetPosY, `+${gainedPoints} (${reactMs}ms)`, '#ffbe0b');
+            } else {
+                playSound('hit');
+                createParticleBurst(centerX, centerY, '#ff007f');
+                spawnFloatingText(centerX, targetPosY, `+${gainedPoints}`, '#00ffcc');
+            }
+
             target.style.display = 'none';
             
             const openedShop = registerTargetDisplay();
@@ -586,6 +937,24 @@
         function showTarget() {
             if (!gameActive) return;
 
+            const rand = Math.random();
+            if (rand < 0.12) {
+                targetType = 'gold';
+                target.textContent = '';
+            } else if (rand < 0.25) {
+                targetType = 'bomb';
+                target.textContent = '✕';
+            } else if (rand < 0.38) {
+                targetType = 'armored';
+                hitsRemaining = Math.random() < 0.5 ? 2 : 3;
+                target.textContent = hitsRemaining;
+            } else {
+                targetType = 'standard';
+                target.textContent = '';
+            }
+
+            target.className = targetType;
+
             const areaWidth = gameArea.clientWidth;
             const areaHeight = gameArea.clientHeight;
 
@@ -593,20 +962,48 @@
             const maxX = areaWidth - currentSize;
             const maxY = areaHeight - currentSize;
 
-            const randomX = Math.floor(Math.random() * Math.max(0, maxX));
-            const randomY = Math.floor(Math.random() * Math.max(0, maxY));
+            targetPosX = Math.floor(Math.random() * Math.max(0, maxX));
+            targetPosY = Math.floor(Math.random() * Math.max(0, maxY));
 
             target.style.width = `${currentSize}px`;
             target.style.height = `${currentSize}px`;
-            target.style.left = `${randomX}px`;
-            target.style.top = `${randomY}px`;
-            target.style.display = 'block';
+            target.style.left = `${targetPosX}px`;
+            target.style.top = `${targetPosY}px`;
+            target.style.display = 'flex';
 
             spawnTime = Date.now();
+
+            cancelAnimationFrame(driftAnimationId);
+            if (currentRound > 20) {
+                driftVelX = (Math.random() - 0.5) * 3;
+                driftVelY = (Math.random() - 0.5) * 3;
+                updateDriftPosition(currentSize, maxX, maxY);
+            }
 
             despawnTimer = setTimeout(() => {
                 handleMiss();
             }, getCurrentDespawnDelay());
+        }
+
+        function updateDriftPosition(size, maxX, maxY) {
+            if (target.style.display !== 'flex') return;
+
+            targetPosX += driftVelX;
+            targetPosY += driftVelY;
+
+            if (targetPosX <= 0 || targetPosX >= maxX) {
+                driftVelX *= -1;
+                targetPosX = Math.max(0, Math.min(targetPosX, maxX));
+            }
+            if (targetPosY <= 0 || targetPosY >= maxY) {
+                driftVelY *= -1;
+                targetPosY = Math.max(0, Math.min(targetPosY, maxY));
+            }
+
+            target.style.left = `${targetPosX}px`;
+            target.style.top = `${targetPosY}px`;
+
+            driftAnimationId = requestAnimationFrame(() => updateDriftPosition(size, maxX, maxY));
         }
 
         // Upgrades
@@ -615,6 +1012,7 @@
                 score -= multCost;
                 pointsPerClick += 1;
                 multCost = Math.floor(multCost * 1.8);
+                playSound('buy');
                 updateUI();
             }
         }
@@ -624,6 +1022,7 @@
                 score -= sizeCost;
                 sizeUpgradesBonus += 10;
                 sizeCost = Math.floor(sizeCost * 1.8);
+                playSound('buy');
                 updateUI();
             }
         }
@@ -633,6 +1032,7 @@
                 score -= timeCost;
                 timeUpgradesBonus += 100;
                 timeCost = Math.floor(timeCost * 1.8);
+                playSound('buy');
                 updateUI();
             }
         }
@@ -642,12 +1042,14 @@
                 score -= healCost;
                 lives++;
                 healCost = Math.floor(healCost * 1.5);
+                playSound('buy');
                 updateUI();
             }
         }
 
         function updateUI() {
             scoreEl.textContent = score;
+            comboDisplayEl.textContent = `x${comboMultiplier}`;
             roundDisplayEl.textContent = `R${currentRound} (${totalTargets % 10}/10)`;
             
             const activeLives = Math.max(0, Math.min(3, lives));

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reaction Speed Arcade v1.0.2</title>
+    <title>Reaction Speed Arcade v1.1.0</title>
     <style>
         * {
             box-sizing: border-box;
@@ -75,15 +75,8 @@
             white-space: nowrap;
         }
 
-        #combo-display {
-            color: #ffbe0b;
-        }
-
-        #lives-display {
-            color: #ff4757;
-            letter-spacing: 1px;
-            font-size: 0.85rem;
-        }
+        #combo-display { color: #ffbe0b; }
+        #lives-display { color: #ff4757; letter-spacing: 1px; font-size: 0.85rem; }
 
         .header-controls {
             display: flex;
@@ -105,9 +98,7 @@
             align-items: center;
         }
 
-        .icon-btn:active {
-            transform: scale(0.92);
-        }
+        .icon-btn:active { transform: scale(0.92); }
 
         .action-btn {
             background: #ff4757;
@@ -120,8 +111,21 @@
             cursor: pointer;
         }
 
-        .action-btn:active {
-            transform: scale(0.95);
+        .action-btn:active { transform: scale(0.95); }
+
+        /* Modifier Banner */
+        .modifier-banner {
+            width: 100%;
+            background: rgba(255, 0, 127, 0.15);
+            border: 1px solid rgba(255, 0, 127, 0.3);
+            border-radius: 8px;
+            padding: 4px 10px;
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #ff80bf;
+            font-weight: bold;
+            display: none;
         }
 
         .game-area {
@@ -135,11 +139,12 @@
             overflow: hidden;
             border: 2px dashed rgba(255, 255, 255, 0.1);
             cursor: crosshair;
+            transition: filter 0.3s ease;
         }
 
-        .game-area.shake {
-            animation: camera-shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
-        }
+        /* Modifier Screen Styles */
+        .game-area.mod-fog { filter: blur(3px); }
+        .game-area.shake { animation: camera-shake 0.35s cubic-bezier(.36,.07,.19,.97) both; }
 
         @keyframes camera-shake {
             10%, 90% { transform: translate3d(-2px, 1px, 0); }
@@ -165,22 +170,40 @@
             line-height: 1;
         }
 
+        /* Target Fading Animation */
+        .target-fade {
+            animation: target-disappear var(--fade-duration) linear forwards;
+        }
+
+        @keyframes target-disappear {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
         /* --- THEME / SKIN STYLES --- */
-        /* Neon Theme */
         .theme-neon #target.standard { background: radial-gradient(circle, #ff007f, #7928ca); box-shadow: 0 0 20px #ff007f; }
         .theme-neon #target.gold { background: radial-gradient(circle, #fff3b0, #ffbe0b, #fb5607); box-shadow: 0 0 25px #ffbe0b; animation: pulse-gold 0.6s infinite alternate; }
         .theme-neon #target.bomb { background: radial-gradient(circle, #ff0000, #5c0000); box-shadow: 0 0 20px #ff0000; border: 2px solid #ff4757; }
         .theme-neon #target.armored { background: radial-gradient(circle, #485563, #29323c); box-shadow: 0 0 20px #00e5ff; border: 3px solid #00e5ff; color: #00e5ff; }
 
-        /* Emoji Theme */
         .theme-emoji #target { background: transparent !important; box-shadow: none !important; border: none !important; text-shadow: none !important; }
         
-        /* Retro Pixel Theme */
         .theme-retro #target { border-radius: 4px; }
         .theme-retro #target.standard { background: #00ffcc; box-shadow: 0 0 10px #00ffcc; color: #000; }
         .theme-retro #target.gold { background: #ffbe0b; box-shadow: 0 0 10px #ffbe0b; color: #000; }
         .theme-retro #target.bomb { background: #ff4757; box-shadow: 0 0 10px #ff4757; color: #fff; }
         .theme-retro #target.armored { background: #7928ca; box-shadow: 0 0 10px #7928ca; color: #00e5ff; border: 2px solid #00e5ff; }
+
+        .theme-cyber #target { clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); border-radius: 0; }
+        .theme-cyber #target.standard { background: #ff0055; box-shadow: 0 0 15px #ff0055; }
+        .theme-cyber #target.gold { background: #ffe600; box-shadow: 0 0 15px #ffe600; color: #000; }
+        .theme-cyber #target.bomb { background: #000; border: 2px solid #ff0055; color: #ff0055; }
+        .theme-cyber #target.armored { background: #00f0ff; color: #000; box-shadow: 0 0 15px #00f0ff; }
+
+        .theme-cosmic #target.standard { background: radial-gradient(circle, #9d4edd, #3c096c); box-shadow: 0 0 20px #9d4edd; }
+        .theme-cosmic #target.gold { background: radial-gradient(circle, #f72585, #7209b7); box-shadow: 0 0 25px #f72585; }
+        .theme-cosmic #target.bomb { background: radial-gradient(circle, #4cc9f0, #4361ee); box-shadow: 0 0 20px #4cc9f0; border: 2px solid #fff; }
+        .theme-cosmic #target.armored { background: radial-gradient(circle, #7209b7, #3a0ca3); box-shadow: 0 0 20px #4895ef; border: 2px solid #4895ef; }
 
         @keyframes pulse-gold {
             from { transform: scale(1); }
@@ -300,14 +323,17 @@
 
         .skin-selector {
             display: flex;
-            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
             margin-bottom: 15px;
+            max-width: 90%;
         }
 
         .skin-option {
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 8px;
             font-size: 0.75rem;
             cursor: pointer;
@@ -318,6 +344,12 @@
             border-color: #00ffcc;
             color: #00ffcc;
             background: rgba(0, 255, 204, 0.15);
+        }
+
+        .skin-option.locked {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: #555;
         }
 
         .shop-overlay {
@@ -465,16 +497,15 @@
             </div>
         </header>
 
+        <div class="modifier-banner" id="modifier-banner"></div>
+
         <div class="game-area" id="game-area">
             <div class="overlay" id="overlay">
                 <h1 id="overlay-title">Target Rush</h1>
-                <p id="overlay-subtitle">Click targets! Select skin & tap Start.</p>
+                <p id="overlay-subtitle">Click targets! Select unlocked skin & tap Start.</p>
                 
-                <div class="skin-selector">
-                    <div class="skin-option active" onclick="setSkin('neon', this)">Neon</div>
-                    <div class="skin-option" onclick="setSkin('emoji', this)">Emoji 🎯</div>
-                    <div class="skin-option" onclick="setSkin('retro', this)">Retro 👾</div>
-                </div>
+                <div class="skin-selector" id="skin-selector">
+                    </div>
 
                 <button class="start-btn" id="start-btn" onclick="handleStartBtnClick()">Start Game</button>
             </div>
@@ -558,6 +589,7 @@
     </div>
 
     <script>
+        // --- AUDIO SYNTHESIZER ---
         let audioCtx = null;
         let isMuted = false;
 
@@ -648,8 +680,38 @@
             }
         }
 
+        // --- SKINS & UNLOCK PROGRESSION ---
+        let maxRoundReached = parseInt(localStorage.getItem('targetRushMaxRound')) || 1;
         let currentSkin = 'neon';
+
         const emojiMap = { standard: '🎯', gold: '⭐', bomb: '💣', armored: '🛡️' };
+        const cosmicEmojiMap = { standard: '🪐', gold: '🌟', bomb: '☄️', armored: '🛸' };
+
+        const skinDefinitions = [
+            { id: 'neon', name: 'Neon', reqRound: 1 },
+            { id: 'emoji', name: 'Emoji 🎯', reqRound: 20 },
+            { id: 'retro', name: 'Retro 👾', reqRound: 40 },
+            { id: 'cyber', name: 'Cyber ⚡', reqRound: 60 },
+            { id: 'cosmic', name: 'Cosmic 🌌', reqRound: 80 }
+        ];
+
+        function renderSkinSelector() {
+            const selectorEl = document.getElementById('skin-selector');
+            selectorEl.innerHTML = '';
+
+            skinDefinitions.forEach(skin => {
+                const opt = document.createElement('div');
+                const isUnlocked = maxRoundReached >= skin.reqRound;
+                
+                opt.className = `skin-option ${skin.id === currentSkin ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}`;
+                opt.textContent = isUnlocked ? skin.name : `🔒 R${skin.reqRound}`;
+                
+                if (isUnlocked) {
+                    opt.onclick = () => setSkin(skin.id, opt);
+                }
+                selectorEl.appendChild(opt);
+            });
+        }
 
         function setSkin(skinName, el) {
             currentSkin = skinName;
@@ -658,14 +720,10 @@
             if (el) el.classList.add('active');
         }
 
-        function openHelpModal() {
-            document.getElementById('help-modal').style.display = 'flex';
-        }
+        function openHelpModal() { document.getElementById('help-modal').style.display = 'flex'; }
+        function closeHelpModal() { document.getElementById('help-modal').style.display = 'none'; }
 
-        function closeHelpModal() {
-            document.getElementById('help-modal').style.display = 'none';
-        }
-
+        // --- JUICE & VISUAL EFFECTS ---
         function triggerScreenShake() {
             gameArea.classList.remove('shake');
             void gameArea.offsetWidth;
@@ -711,6 +769,7 @@
             }
         }
 
+        // --- GAME STATE ---
         let score = 0;
         let highScore = parseInt(localStorage.getItem('targetRushHighScore')) || 0;
         let lives = 3;
@@ -751,6 +810,7 @@
         const reactionTimeEl = document.getElementById('reaction-time');
         const target = document.getElementById('target');
         const gameArea = document.getElementById('game-area');
+        const modifierBannerEl = document.getElementById('modifier-banner');
         
         const overlay = document.getElementById('overlay');
         const overlayTitle = document.getElementById('overlay-title');
@@ -768,6 +828,28 @@
         const sizeCostEl = document.getElementById('size-cost');
         const timeCostEl = document.getElementById('time-cost');
         const healCostEl = document.getElementById('heal-cost');
+
+        // --- ROUND MODIFIERS LOGIC ---
+        function applyRoundModifiers() {
+            gameArea.classList.remove('mod-fog');
+            modifierBannerEl.style.display = 'none';
+
+            if (currentRound >= 10 && currentRound < 20) {
+                modifierBannerEl.textContent = '⚠️ MODIFIER: Target Dissolve (Fade-Out)';
+                modifierBannerEl.style.display = 'block';
+            } else if (currentRound >= 20 && currentRound < 30) {
+                modifierBannerEl.textContent = '⚠️ MODIFIER: Physics Drift (Drifting Targets)';
+                modifierBannerEl.style.display = 'block';
+            } else if (currentRound >= 30 && currentRound < 40) {
+                gameArea.classList.add('mod-fog');
+                modifierBannerEl.textContent = '⚠️ MODIFIER: Heavy Fog (Blurry Area)';
+                modifierBannerEl.style.display = 'block';
+            } else if (currentRound >= 40) {
+                gameArea.classList.add('mod-fog');
+                modifierBannerEl.textContent = '⚠️ MODIFIER: Chaos Surge (Drift + Fade + Fog)';
+                modifierBannerEl.style.display = 'block';
+            }
+        }
 
         function getCurrentTargetSize() {
             let baseScaledSize = 90;
@@ -816,6 +898,7 @@
             isGameOver = false;
             overlay.style.display = 'none';
             shopOverlay.style.display = 'none';
+            applyRoundModifiers();
             scheduleTarget();
         }
 
@@ -835,6 +918,7 @@
             overlayTitle.textContent = "Game Over!";
             overlaySubtitle.textContent = `Final Score: ${score} points | Reached Round ${currentRound}`;
             startBtn.textContent = "Play Again";
+            renderSkinSelector();
             overlay.style.display = 'flex';
             updateUI();
         }
@@ -865,10 +949,13 @@
             reactionTimeEl.textContent = '0 ms';
             target.style.display = 'none';
             shopOverlay.style.display = 'none';
+            modifierBannerEl.style.display = 'none';
+            gameArea.classList.remove('mod-fog');
 
             overlayTitle.textContent = "Target Rush";
-            overlaySubtitle.textContent = "Click targets! Difficulty scales each round (smaller & faster).";
+            overlaySubtitle.textContent = "Click targets! Unlocks every 20 rounds.";
             startBtn.textContent = "Start Game";
+            renderSkinSelector();
             overlay.style.display = 'flex';
 
             gameActive = false;
@@ -889,9 +976,16 @@
         function resumeGame() {
             initAudio();
             currentRound++;
+            
+            if (currentRound > maxRoundReached) {
+                maxRoundReached = currentRound;
+                localStorage.setItem('targetRushMaxRound', maxRoundReached);
+            }
+
             updateUI();
             shopOverlay.style.display = 'none';
             gameActive = true;
+            applyRoundModifiers();
             scheduleTarget();
         }
 
@@ -969,7 +1063,7 @@
 
             if (targetType === 'armored' && hitsRemaining > 1) {
                 hitsRemaining--;
-                target.textContent = currentSkin === 'emoji' ? '🛡️' : hitsRemaining;
+                target.textContent = currentSkin === 'emoji' ? '🛡️' : (currentSkin === 'cosmic' ? '🛸' : hitsRemaining);
                 target.style.transform = 'scale(0.85)';
                 setTimeout(() => target.style.transform = 'scale(1)', 80);
                 playSound('armored_hit');
@@ -1039,17 +1133,17 @@
             const rand = Math.random();
             if (rand < 0.12) {
                 targetType = 'gold';
-                target.textContent = currentSkin === 'emoji' ? emojiMap.gold : (currentSkin === 'retro' ? '★' : '');
+                target.textContent = currentSkin === 'emoji' ? emojiMap.gold : (currentSkin === 'cosmic' ? cosmicEmojiMap.gold : (currentSkin === 'retro' ? '★' : ''));
             } else if (rand < 0.25) {
                 targetType = 'bomb';
-                target.textContent = currentSkin === 'emoji' ? emojiMap.bomb : '✕';
+                target.textContent = currentSkin === 'emoji' ? emojiMap.bomb : (currentSkin === 'cosmic' ? cosmicEmojiMap.bomb : '✕');
             } else if (rand < 0.38) {
                 targetType = 'armored';
                 hitsRemaining = Math.random() < 0.5 ? 2 : 3;
-                target.textContent = currentSkin === 'emoji' ? emojiMap.armored : hitsRemaining;
+                target.textContent = currentSkin === 'emoji' ? emojiMap.armored : (currentSkin === 'cosmic' ? cosmicEmojiMap.armored : hitsRemaining);
             } else {
                 targetType = 'standard';
-                target.textContent = currentSkin === 'emoji' ? emojiMap.standard : '';
+                target.textContent = currentSkin === 'emoji' ? emojiMap.standard : (currentSkin === 'cosmic' ? cosmicEmojiMap.standard : '');
             }
 
             target.className = targetType;
@@ -1058,6 +1152,7 @@
             const areaHeight = gameArea.clientHeight;
 
             const currentSize = getCurrentTargetSize();
+            const despawnDelay = getCurrentDespawnDelay();
             const maxX = areaWidth - currentSize;
             const maxY = areaHeight - currentSize;
 
@@ -1067,8 +1162,7 @@
             target.style.width = `${currentSize}px`;
             target.style.height = `${currentSize}px`;
             
-            // Dynamic Font & Emoji Scale Fix (properly scales with sizeUpgradesBonus)
-            const fontRatio = currentSkin === 'emoji' ? 0.82 : 0.45;
+            const fontRatio = currentSkin === 'emoji' || currentSkin === 'cosmic' ? 0.82 : 0.45;
             const fontSizePx = Math.floor(currentSize * fontRatio);
             target.style.fontSize = `${Math.max(14, fontSizePx)}px`;
 
@@ -1076,18 +1170,27 @@
             target.style.top = `${targetPosY}px`;
             target.style.display = 'flex';
 
+            // Target Dissolve Fade Animation (R10-19 or R40+)
+            target.classList.remove('target-fade');
+            if ((currentRound >= 10 && currentRound < 20) || currentRound >= 40) {
+                target.style.setProperty('--fade-duration', `${despawnDelay}ms`);
+                void target.offsetWidth;
+                target.classList.add('target-fade');
+            }
+
             spawnTime = Date.now();
 
+            // Physics Drift (R20-29 or R40+)
             cancelAnimationFrame(driftAnimationId);
-            if (currentRound > 20) {
-                driftVelX = (Math.random() - 0.5) * 3;
-                driftVelY = (Math.random() - 0.5) * 3;
+            if ((currentRound >= 20 && currentRound < 30) || currentRound >= 40) {
+                driftVelX = (Math.random() - 0.5) * 3.5;
+                driftVelY = (Math.random() - 0.5) * 3.5;
                 updateDriftPosition(currentSize, maxX, maxY);
             }
 
             despawnTimer = setTimeout(() => {
                 handleMiss();
-            }, getCurrentDespawnDelay());
+            }, despawnDelay);
         }
 
         function updateDriftPosition(size, maxX, maxY) {
@@ -1111,6 +1214,7 @@
             driftAnimationId = requestAnimationFrame(() => updateDriftPosition(size, maxX, maxY));
         }
 
+        // Upgrades
         function buyMultiplier() {
             if (score >= multCost) {
                 score -= multCost;
@@ -1174,6 +1278,7 @@
             buyHealBtn.disabled = score < healCost || lives >= 3;
         }
 
+        renderSkinSelector();
         updateUI();
     </script>
 </body>

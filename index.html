@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reaction Speed Arcade v1.1.0</title>
+    <title>Reflex Rush v1.3.1</title>
     <style>
         * {
             box-sizing: border-box;
@@ -21,7 +21,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            min-height: -webkit-fill-available;
+            min-height: 100dvh;
         }
 
         html {
@@ -44,11 +44,10 @@
 
         header {
             width: 100%;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
             align-items: center;
-            gap: 6px;
+            gap: 6px 8px;
             margin-bottom: 10px;
             padding: 8px 10px;
             background: rgba(0, 0, 0, 0.3);
@@ -57,31 +56,42 @@
 
         .stat-box {
             text-align: center;
-            flex: 1 1 12%;
-            min-width: 50px;
+            min-width: 0;
+            flex-shrink: 1;
         }
 
         .stat-title {
-            font-size: 0.6rem;
+            font-size: clamp(0.55rem, 1.2vw, 0.7rem);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #aaa;
-        }
-
-        .stat-value {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #00ffcc;
             white-space: nowrap;
         }
 
+        .stat-value {
+            font-size: clamp(0.75rem, 1.8vw, 1.1rem);
+            font-weight: bold;
+            color: #00ffcc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         #combo-display { color: #ffbe0b; }
-        #lives-display { color: #ff4757; letter-spacing: 1px; font-size: 0.85rem; }
+        
+        #lives-display { 
+            color: #ff4757; 
+            letter-spacing: -2px; 
+            font-size: clamp(0.7rem, 1.6vw, 1rem); 
+            white-space: nowrap;
+        }
 
         .header-controls {
             display: flex;
             gap: 6px;
             align-items: center;
+            justify-content: center;
+            grid-column: span 2;
         }
 
         .icon-btn {
@@ -96,6 +106,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            flex-shrink: 0;
         }
 
         .icon-btn:active { transform: scale(0.92); }
@@ -109,11 +120,11 @@
             font-size: 0.75rem;
             font-weight: bold;
             cursor: pointer;
+            white-space: nowrap;
         }
 
         .action-btn:active { transform: scale(0.95); }
 
-        /* Modifier Banner */
         .modifier-banner {
             width: 100%;
             background: rgba(255, 0, 127, 0.15);
@@ -142,7 +153,6 @@
             transition: filter 0.3s ease;
         }
 
-        /* Modifier Screen Styles */
         .game-area.mod-fog { filter: blur(3px); }
         .game-area.shake { animation: camera-shake 0.35s cubic-bezier(.36,.07,.19,.97) both; }
 
@@ -168,9 +178,19 @@
             text-shadow: 0 0 5px #000;
             z-index: 5;
             line-height: 1;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center;
         }
 
-        /* Target Fading Animation */
+        /* DEFENSIVE FALLBACK STYLES FOR IMAGE SKINS */
+        #target.fallback-skin {
+            background-image: none !important;
+            border: 2px solid #00ffcc !important;
+            background-color: rgba(0, 255, 204, 0.2) !important;
+            border-radius: 8px !important;
+        }
+
         .target-fade {
             animation: target-disappear var(--fade-duration) linear forwards;
         }
@@ -185,6 +205,32 @@
         .theme-neon #target.gold { background: radial-gradient(circle, #fff3b0, #ffbe0b, #fb5607); box-shadow: 0 0 25px #ffbe0b; animation: pulse-gold 0.6s infinite alternate; }
         .theme-neon #target.bomb { background: radial-gradient(circle, #ff0000, #5c0000); box-shadow: 0 0 20px #ff0000; border: 2px solid #ff4757; }
         .theme-neon #target.armored { background: radial-gradient(circle, #485563, #29323c); box-shadow: 0 0 20px #00e5ff; border: 3px solid #00e5ff; color: #00e5ff; }
+
+        /* CASH & WEALTH SKIN STYLES (Embedded Vector Support) */
+        .theme-cash #target {
+            border-radius: 6px;
+            box-shadow: none !important;
+            border: none !important;
+            background-repeat: no-repeat;
+            background-size: contain;
+            background-position: center;
+        }
+        .theme-cash #target.standard {
+            background-image: var(--cash-std-img);
+        }
+        .theme-cash #target.gold {
+            background-image: var(--cash-gold-img);
+            animation: pulse-gold 0.6s infinite alternate;
+        }
+        .theme-cash #target.armored {
+            background-image: var(--cash-silver-img);
+            color: #000;
+            text-shadow: 0 0 2px #fff;
+        }
+        .theme-cash #target.bomb {
+            background-image: var(--cash-wallet-img);
+            border-radius: 0;
+        }
 
         .theme-emoji #target { background: transparent !important; box-shadow: none !important; border: none !important; text-shadow: none !important; }
         
@@ -446,10 +492,13 @@
         }
 
         @media (min-width: 600px) {
-            header { flex-wrap: nowrap; padding: 10px 20px; gap: 0; }
-            .stat-title { font-size: 0.7rem; }
-            .stat-value { font-size: 1.4rem; }
-            #lives-display { font-size: 1.4rem; }
+            header { 
+                grid-template-columns: repeat(6, 1fr) auto;
+                padding: 10px 16px; 
+            }
+            .header-controls {
+                grid-column: span 1;
+            }
             .action-btn { font-size: 0.85rem; padding: 6px 14px; }
             .shop-overlay { padding: 15px; }
             .shop-overlay h2 { font-size: 1.8rem; }
@@ -480,7 +529,7 @@
             </div>
             <div class="stat-box">
                 <div class="stat-title">Progress</div>
-                <div class="stat-value" id="round-display">R1 (0/10)</div>
+                <div class="stat-value" id="round-display">R1 (0)</div>
             </div>
             <div class="stat-box">
                 <div class="stat-title">Strikes</div>
@@ -501,11 +550,10 @@
 
         <div class="game-area" id="game-area">
             <div class="overlay" id="overlay">
-                <h1 id="overlay-title">Target Rush</h1>
+                <h1 id="overlay-title">Reflex Rush</h1>
                 <p id="overlay-subtitle">Click targets! Select unlocked skin & tap Start.</p>
                 
-                <div class="skin-selector" id="skin-selector">
-                    </div>
+                <div class="skin-selector" id="skin-selector"></div>
 
                 <button class="start-btn" id="start-btn" onclick="handleStartBtnClick()">Start Game</button>
             </div>
@@ -589,7 +637,45 @@
     </div>
 
     <script>
-        // --- AUDIO SYNTHESIZER ---
+        // --- EMBEDDED CASH SKIN ASSETS (Vector Base64 URIs) ---
+        const CASH_ASSETS = {
+            cash: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'><rect width='100' height='50' rx='6' fill='%232ecc71' stroke='%2327ae60' stroke-width='3'/><rect x='42' y='0' width='16' height='50' fill='%23f1c40f'/><circle cx='50' cy='25' r='10' fill='%2327ae60'/><text x='50' y='31' font-size='18' font-weight='bold' text-anchor='middle' fill='%23fff'>$</text></svg>",
+            gold: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'><rect width='100' height='50' rx='6' fill='%23f1c40f' stroke='%23f39c12' stroke-width='3'/><rect x='10' y='8' width='80' height='10' rx='3' fill='%23fce5cd' opacity='0.5'/><text x='50' y='34' font-size='16' font-weight='bold' text-anchor='middle' fill='%237f8c8d'>GOLD</text></svg>",
+            silver: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'><rect width='100' height='50' rx='6' fill='%23bdc3c7' stroke='%237f8c8d' stroke-width='3'/><rect x='10' y='8' width='80' height='10' rx='3' fill='%23fff' opacity='0.6'/><text x='50' y='34' font-size='15' font-weight='bold' text-anchor='middle' fill='%232c3e50'>SILVER</text></svg>",
+            wallet: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='4' y='12' width='56' height='44' rx='8' fill='%23e74c3c' stroke='%232c3e50' stroke-width='3'/><path d='M4 22 h56' stroke='%232c3e50' stroke-width='2'/><circle cx='48' cy='34' r='5' fill='%23f1c40f'/><path d='M20 6 Q32 0 44 6' fill='none' stroke='%23ecf0f1' stroke-width='3'/></svg>"
+        };
+
+        // Inject Root CSS Variables for Image Assets
+        document.documentElement.style.setProperty('--cash-std-img', `url("${CASH_ASSETS.cash}")`);
+        document.documentElement.style.setProperty('--cash-gold-img', `url("${CASH_ASSETS.gold}")`);
+        document.documentElement.style.setProperty('--cash-silver-img', `url("${CASH_ASSETS.silver}")`);
+        document.documentElement.style.setProperty('--cash-wallet-img', `url("${CASH_ASSETS.wallet}")`);
+
+        // Defensive Preloader Verification
+        const preloadedImages = {};
+        let skinsLoaded = false;
+
+        function preloadSkinAssets() {
+            let loadedCount = 0;
+            const keys = Object.keys(CASH_ASSETS);
+            
+            keys.forEach(key => {
+                const img = new Image();
+                img.src = CASH_ASSETS[key];
+                img.onload = () => {
+                    loadedCount++;
+                    if (loadedCount === keys.length) {
+                        skinsLoaded = true;
+                    }
+                };
+                img.onerror = () => {
+                    console.warn(`[Skin Registry] Failed to load skin asset: ${key}`);
+                };
+                preloadedImages[key] = img;
+            });
+        }
+        preloadSkinAssets();
+
         let audioCtx = null;
         let isMuted = false;
 
@@ -680,19 +766,20 @@
             }
         }
 
-        // --- SKINS & UNLOCK PROGRESSION ---
-        let maxRoundReached = parseInt(localStorage.getItem('targetRushMaxRound')) || 1;
+        let maxRoundReached = parseInt(localStorage.getItem('reflexRushMaxRound')) || 1;
         let currentSkin = 'neon';
 
         const emojiMap = { standard: '🎯', gold: '⭐', bomb: '💣', armored: '🛡️' };
         const cosmicEmojiMap = { standard: '🪐', gold: '🌟', bomb: '☄️', armored: '🛸' };
 
+        // SHARED SKIN REGISTRY DEFINITION
         const skinDefinitions = [
-            { id: 'neon', name: 'Neon', reqRound: 1 },
-            { id: 'emoji', name: 'Emoji 🎯', reqRound: 20 },
-            { id: 'retro', name: 'Retro 👾', reqRound: 40 },
-            { id: 'cyber', name: 'Cyber ⚡', reqRound: 60 },
-            { id: 'cosmic', name: 'Cosmic 🌌', reqRound: 80 }
+            { id: 'neon', name: 'Neon', reqRound: 1, isImageBased: false },
+            { id: 'cash', name: 'Cash 💵', reqRound: 1, isImageBased: true },
+            { id: 'emoji', name: 'Emoji 🎯', reqRound: 20, isImageBased: false },
+            { id: 'retro', name: 'Retro 👾', reqRound: 40, isImageBased: false },
+            { id: 'cyber', name: 'Cyber ⚡', reqRound: 60, isImageBased: false },
+            { id: 'cosmic', name: 'Cosmic 🌌', reqRound: 80, isImageBased: false }
         ];
 
         function renderSkinSelector() {
@@ -723,7 +810,6 @@
         function openHelpModal() { document.getElementById('help-modal').style.display = 'flex'; }
         function closeHelpModal() { document.getElementById('help-modal').style.display = 'none'; }
 
-        // --- JUICE & VISUAL EFFECTS ---
         function triggerScreenShake() {
             gameArea.classList.remove('shake');
             void gameArea.offsetWidth;
@@ -769,9 +855,8 @@
             }
         }
 
-        // --- GAME STATE ---
         let score = 0;
-        let highScore = parseInt(localStorage.getItem('targetRushHighScore')) || 0;
+        let highScore = parseInt(localStorage.getItem('reflexRushHighScore')) || 0;
         let lives = 3;
         let totalTargets = 0;
         let currentRound = 1;
@@ -829,7 +914,6 @@
         const timeCostEl = document.getElementById('time-cost');
         const healCostEl = document.getElementById('heal-cost');
 
-        // --- ROUND MODIFIERS LOGIC ---
         function applyRoundModifiers() {
             gameArea.classList.remove('mod-fog');
             modifierBannerEl.style.display = 'none';
@@ -912,7 +996,7 @@
             
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem('targetRushHighScore', highScore);
+                localStorage.setItem('reflexRushHighScore', highScore);
             }
 
             overlayTitle.textContent = "Game Over!";
@@ -952,7 +1036,7 @@
             modifierBannerEl.style.display = 'none';
             gameArea.classList.remove('mod-fog');
 
-            overlayTitle.textContent = "Target Rush";
+            overlayTitle.textContent = "Reflex Rush";
             overlaySubtitle.textContent = "Click targets! Unlocks every 20 rounds.";
             startBtn.textContent = "Start Game";
             renderSkinSelector();
@@ -979,7 +1063,7 @@
             
             if (currentRound > maxRoundReached) {
                 maxRoundReached = currentRound;
-                localStorage.setItem('targetRushMaxRound', maxRoundReached);
+                localStorage.setItem('reflexRushMaxRound', maxRoundReached);
             }
 
             updateUI();
@@ -1044,7 +1128,8 @@
                 triggerScreenShake();
                 
                 const currentSize = getCurrentTargetSize();
-                spawnFloatingText(targetPosX + currentSize / 2, targetPosY, "BOMB! -1 HP", "#ff4757");
+                const bombMsg = currentSkin === 'cash' ? "FLYING WALLET! -1 HP" : "BOMB! -1 HP";
+                spawnFloatingText(targetPosX + currentSize / 2, targetPosY, bombMsg, "#ff4757");
                 
                 target.style.display = 'none';
                 updateUI();
@@ -1063,13 +1148,23 @@
 
             if (targetType === 'armored' && hitsRemaining > 1) {
                 hitsRemaining--;
-                target.textContent = currentSkin === 'emoji' ? '🛡️' : (currentSkin === 'cosmic' ? '🛸' : hitsRemaining);
+                if (currentSkin === 'cash') {
+                    target.textContent = hitsRemaining;
+                } else if (currentSkin === 'emoji') {
+                    target.textContent = '🛡️';
+                } else if (currentSkin === 'cosmic') {
+                    target.textContent = '🛸';
+                } else {
+                    target.textContent = hitsRemaining;
+                }
+                
                 target.style.transform = 'scale(0.85)';
                 setTimeout(() => target.style.transform = 'scale(1)', 80);
                 playSound('armored_hit');
                 
                 const currentSize = getCurrentTargetSize();
-                createParticleBurst(targetPosX + currentSize / 2, targetPosY + currentSize / 2, '#00e5ff');
+                const particleColor = currentSkin === 'cash' ? '#bdc3c7' : '#00e5ff';
+                createParticleBurst(targetPosX + currentSize / 2, targetPosY + currentSize / 2, particleColor);
                 return;
             }
 
@@ -1087,7 +1182,7 @@
             
             if (score > highScore) {
                 highScore = score;
-                localStorage.setItem('targetRushHighScore', highScore);
+                localStorage.setItem('reflexRushHighScore', highScore);
             }
 
             const currentSize = getCurrentTargetSize();
@@ -1096,12 +1191,19 @@
 
             if (targetType === 'gold') {
                 playSound('gold');
-                createParticleBurst(centerX, centerY, '#ffbe0b');
-                spawnFloatingText(centerX, targetPosY, `+${gainedPoints} (${reactMs}ms)`, '#ffbe0b');
+                const goldParticleColor = currentSkin === 'cash' ? '#f1c40f' : '#ffbe0b';
+                createParticleBurst(centerX, centerY, goldParticleColor);
+                
+                const floatPrefix = currentSkin === 'cash' ? '+$' : '+';
+                spawnFloatingText(centerX, targetPosY, `${floatPrefix}${gainedPoints} (${reactMs}ms)`, '#ffbe0b');
             } else {
                 playSound('hit');
-                createParticleBurst(centerX, centerY, '#ff007f');
-                spawnFloatingText(centerX, targetPosY, `+${gainedPoints}`, '#00ffcc');
+                const stdParticleColor = currentSkin === 'cash' ? '#2ecc71' : '#ff007f';
+                createParticleBurst(centerX, centerY, stdParticleColor);
+                
+                const floatPrefix = currentSkin === 'cash' ? '+$' : '+';
+                const floatColor = currentSkin === 'cash' ? '#2ecc71' : '#00ffcc';
+                spawnFloatingText(centerX, targetPosY, `${floatPrefix}${gainedPoints}`, floatColor);
             }
 
             target.style.display = 'none';
@@ -1130,20 +1232,41 @@
         function showTarget() {
             if (!gameActive) return;
 
+            target.classList.remove('fallback-skin');
+
+            // Defensive Verification: Ensure image skin is ready, otherwise apply fallback visual state
+            const currentSkinDef = skinDefinitions.find(s => s.id === currentSkin);
+            if (currentSkinDef && currentSkinDef.isImageBased && !skinsLoaded) {
+                target.classList.add('fallback-skin');
+            }
+
             const rand = Math.random();
             if (rand < 0.12) {
                 targetType = 'gold';
-                target.textContent = currentSkin === 'emoji' ? emojiMap.gold : (currentSkin === 'cosmic' ? cosmicEmojiMap.gold : (currentSkin === 'retro' ? '★' : ''));
+                if (currentSkin === 'cash') target.textContent = '';
+                else if (currentSkin === 'emoji') target.textContent = emojiMap.gold;
+                else if (currentSkin === 'cosmic') target.textContent = cosmicEmojiMap.gold;
+                else if (currentSkin === 'retro') target.textContent = '★';
+                else target.textContent = '';
             } else if (rand < 0.25) {
                 targetType = 'bomb';
-                target.textContent = currentSkin === 'emoji' ? emojiMap.bomb : (currentSkin === 'cosmic' ? cosmicEmojiMap.bomb : '✕');
+                if (currentSkin === 'cash') target.textContent = '';
+                else if (currentSkin === 'emoji') target.textContent = emojiMap.bomb;
+                else if (currentSkin === 'cosmic') target.textContent = cosmicEmojiMap.bomb;
+                else target.textContent = '✕';
             } else if (rand < 0.38) {
                 targetType = 'armored';
                 hitsRemaining = Math.random() < 0.5 ? 2 : 3;
-                target.textContent = currentSkin === 'emoji' ? emojiMap.armored : (currentSkin === 'cosmic' ? cosmicEmojiMap.armored : hitsRemaining);
+                if (currentSkin === 'cash') target.textContent = hitsRemaining;
+                else if (currentSkin === 'emoji') target.textContent = emojiMap.armored;
+                else if (currentSkin === 'cosmic') target.textContent = cosmicEmojiMap.armored;
+                else target.textContent = hitsRemaining;
             } else {
                 targetType = 'standard';
-                target.textContent = currentSkin === 'emoji' ? emojiMap.standard : (currentSkin === 'cosmic' ? cosmicEmojiMap.standard : '');
+                if (currentSkin === 'cash') target.textContent = '';
+                else if (currentSkin === 'emoji') target.textContent = emojiMap.standard;
+                else if (currentSkin === 'cosmic') target.textContent = cosmicEmojiMap.standard;
+                else target.textContent = '';
             }
 
             target.className = targetType;
@@ -1170,7 +1293,6 @@
             target.style.top = `${targetPosY}px`;
             target.style.display = 'flex';
 
-            // Target Dissolve Fade Animation (R10-19 or R40+)
             target.classList.remove('target-fade');
             if ((currentRound >= 10 && currentRound < 20) || currentRound >= 40) {
                 target.style.setProperty('--fade-duration', `${despawnDelay}ms`);
@@ -1180,7 +1302,6 @@
 
             spawnTime = Date.now();
 
-            // Physics Drift (R20-29 or R40+)
             cancelAnimationFrame(driftAnimationId);
             if ((currentRound >= 20 && currentRound < 30) || currentRound >= 40) {
                 driftVelX = (Math.random() - 0.5) * 3.5;
@@ -1214,7 +1335,6 @@
             driftAnimationId = requestAnimationFrame(() => updateDriftPosition(size, maxX, maxY));
         }
 
-        // Upgrades
         function buyMultiplier() {
             if (score >= multCost) {
                 score -= multCost;
@@ -1259,7 +1379,9 @@
             scoreEl.textContent = score;
             highScoreEl.textContent = highScore;
             comboDisplayEl.textContent = `x${comboMultiplier}`;
-            roundDisplayEl.textContent = `R${currentRound} (${totalTargets % 10}/10)`;
+            
+            const currentRoundProgress = (totalTargets % 10) + 1;
+            roundDisplayEl.textContent = `R${currentRound} (${currentRoundProgress})`;
             
             const activeLives = Math.max(0, Math.min(3, lives));
             let hearts = '';
